@@ -2,6 +2,8 @@
 /* 调色：过曝、褪色、发黄，像一张晒坏了的老照片 */
 .xy-stage { filter: sepia(.22) saturate(.68) contrast(1.08) brightness(1.02); }
 .xy-root svg * { transform-box: fill-box; }
+/* 照片和叠加层只是画面，点击要落到下面的可点区域上 */
+.xy-root svg image, .xy-root svg rect:not(.xy-hot) { pointer-events: none; }
 .xy-serif { font-family: 'Noto Serif SC', serif; }
 .xy-hand { font-family: 'Ma Shan Zheng', 'Noto Serif SC', cursive; }
 

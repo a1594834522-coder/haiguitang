@@ -249,8 +249,8 @@ export function Scene({ milestones, questionCount, thinking, idle, paused, cue }
                 ))}
               </g>
 
-              {/* 可以凑近看的东西 */}
-              <g>
+              {/* 可以凑近看的东西。转过头以后，眼前已经不是这些了 */}
+              <g style={{ display: right ? 'none' : undefined }}>
                 <rect className="xy-hot" {...HOT.chief} onClick={open('chief')} />
                 <rect className="xy-hot" {...HOT.roster} onClick={open('roster')} />
                 <rect className="xy-hot" {...HOT.canteen} onClick={open('canteen')} />
