@@ -5,32 +5,20 @@
 .xy-serif { font-family: 'Noto Serif SC', serif; }
 .xy-hand { font-family: 'Ma Shan Zheng', 'Noto Serif SC', cursive; }
 
-/* 旗子、树、太阳 */
-.xy-flag { transform-origin: 0% 50%; animation: xy-flag 2.6s ease-in-out infinite alternate; }
-@keyframes xy-flag { from { transform: skewY(-3deg) scaleX(.96) } to { transform: skewY(3deg) scaleX(1.02) } }
-.xy-canopy { transform-origin: 50% 100%; animation: xy-sway 7s ease-in-out infinite alternate; }
-@keyframes xy-sway { from { transform: skewX(-.8deg) } to { transform: skewX(.8deg) } }
-.xy-sun { animation: xy-sun 4s ease-in-out infinite alternate; transition: opacity 4s; }
-@keyframes xy-sun { from { filter: brightness(1) } to { filter: brightness(1.08) } }
-
 /* 地上冒的热气 */
 .xy-shimmer path { animation: xy-rise 5.6s linear infinite; }
 @keyframes xy-rise { from { transform: translateY(40px); opacity: 0 } 30% { opacity: 1 } to { transform: translateY(-160px); opacity: 0 } }
 .xy-thinking .xy-shimmer { opacity: 1 !important; }
 
-/* 那个人站得笔直，只有一点点晃 */
-.xy-standing { transform-origin: 50% 100%; animation: xy-wobble 9s ease-in-out infinite; }
-@keyframes xy-wobble { 0%, 100% { transform: rotate(0) } 50% { transform: rotate(.35deg) } }
 .xy-girl { transition: opacity 3s ease; }
-.xy-neighbor { transition: opacity 3s ease 1.6s; }
+.xy-fade { transition: opacity 4s ease; }
+.xy-turn { transition: opacity 2.2s ease .4s, transform 2.6s cubic-bezier(.5, 0, .3, 1); }
 .xy-presence { transition: opacity 5s ease; }
 
 /* “我”的视野：呼吸时轻轻起伏；向右看齐时慢慢把头转过去 */
 .xy-world { transition: transform 2.6s cubic-bezier(.5, 0, .3, 1); }
 .xy-breathe { animation: xy-breathe 5.5s ease-in-out infinite; }
 @keyframes xy-breathe { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(3px) } }
-.xy-wave { animation: xy-wave 1.1s ease-in-out infinite alternate; }
-@keyframes xy-wave { from { transform: rotate(-8deg) } to { transform: rotate(14deg) } }
 
 /* 眨眼：上下眼皮合一下 */
 .xy-blink::before, .xy-blink::after { content: ''; position: absolute; left: 0; right: 0; height: 51%; background: #0a0604; animation: xy-lid .32s ease-in-out both; }
@@ -38,8 +26,6 @@
 .xy-blink::after { bottom: 0; transform-origin: bottom; }
 @keyframes xy-lid { 0%, 100% { transform: scaleY(0) } 45%, 55% { transform: scaleY(1) } }
 .xy-line { transition: opacity 5s ease; }
-.xy-empty { animation: xy-blink 2.4s ease-in-out infinite; }
-@keyframes xy-blink { 50% { opacity: .15 } }
 
 /* 一声哨响：整个操场像被按了暂停 */
 .xy-freeze * { animation-play-state: paused !important; }
@@ -58,5 +44,5 @@
 .xy-inspect-glow { background: radial-gradient(ellipse at 50% 30%, rgba(255, 240, 200, .1), transparent 60%); }
 
 @media (prefers-reduced-motion: reduce) {
-  .xy-flag, .xy-canopy, .xy-sun, .xy-shimmer path, .xy-standing, .xy-empty, .xy-breathe, .xy-wave { animation: none; }
+  .xy-shimmer path, .xy-breathe { animation: none; }
 }
