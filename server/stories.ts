@@ -18,7 +18,18 @@ export type Story = {
   qa: { group: string; items: QAItem[] }[]
   challenges: { q: string; a: string }[]
   hints: { level: number; text: string; when?: string }[]
-  scoring: { total: number; items: { point: string; score: number }[]; pass: string }
+  scoring: {
+    total: number
+    items: {
+      point: string
+      score: number
+      /** 给玩家看的模糊标题（如“关于那个声音”），不能剧透 */
+      title?: string
+      /** 这些里程碑在提问中全部达成，就自动拿到这一分，不用再在还原里复述 */
+      milestones?: string[]
+    }[]
+    pass: string
+  }
   hostNotes: string[]
   credits?: string
   host: {
@@ -49,7 +60,14 @@ export function publicView(s: Story) {
     // 只给总数：里程碑的名字本身就是剧透，达成之后才随会话下发
     milestoneCount: s.host.milestones.length,
     revealLocked: !!s.host.lockReveal,
+    // 还原面板上的“拼图”：只有模糊标题和分值
+    pieces: s.scoring.items.every(it => it.title) ? s.scoring.items.map(it => ({ title: it.title!, score: it.score })) : null,
   }
+}
+
+/** 提问中已经问出来的计分点（对应的里程碑全部达成） */
+export function piecesFromMilestones(s: Story, milestones: string[]): number[] {
+  return s.scoring.items.flatMap((it, i) => (it.milestones?.length && it.milestones.every(m => milestones.includes(m)) ? [i] : []))
 }
 
 /** 目录页只需要的信息 */
@@ -72,6 +90,9 @@ function validate(s: Story, file: string) {
   for (const [lvl, target] of Object.entries(s.host.hintTargets ?? {})) {
     if (!ids.has(target)) throw new Error(`${file}: hintTargets.${lvl} 指向不存在的里程碑 ${target}`)
   }
+  s.scoring.items.forEach((it, i) => {
+    for (const m of it.milestones ?? []) if (!ids.has(m)) throw new Error(`${file}: scoring.items[${i}].milestones 指向不存在的里程碑 ${m}`)
+  })
 }
 
 function loadAll(): Map<string, Story> {

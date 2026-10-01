@@ -324,23 +324,41 @@
     "total": 10,
     "items": [
       {
+        "title": "关于爷爷",
         "point": "爷爷没死，在棺材里敲棺盖求救",
-        "score": 3
+        "score": 3,
+        "milestones": [
+          "coffin",
+          "alive"
+        ]
       },
       {
+        "title": "关于那一夜的“球”",
         "point": "孩子把“救”听成“球”，以为在陪爷爷打球",
-        "score": 3
+        "score": 3,
+        "milestones": [
+          "knock",
+          "help"
+        ]
       },
       {
+        "title": "关于爸爸那句话",
         "point": "爸爸下药害了爷爷，并故意让孩子别停来掩盖求救声",
-        "score": 3
+        "score": 3,
+        "milestones": [
+          "father"
+        ]
       },
       {
+        "title": "关于“我”",
         "point": "结尾轮回：“我”也害了爸爸，又把球拍递给了儿子",
-        "score": 1
+        "score": 1,
+        "milestones": [
+          "cycle"
+        ]
       }
     ],
-    "pass": "答出前三点（9 分）即算通关"
+    "pass": "拼出 9 分即算通关（例如前三点）；通关后可以继续问，自己决定什么时候看汤底"
   },
   "hostNotes": [
     "汤面每句话都是“我”的感知，字面都成立：“爷爷在一号台上”是真的，“陪他打了一整夜”是“我”以为的。",

@@ -21,11 +21,12 @@ export function Game({ storyId }: { storyId: string }) {
   const [thinking, setThinking] = useState(false)
   const [error, setError] = useState('')
   const [cue, setCue] = useState<{ id: string; n: number } | null>(null)
-  const [toast, setToast] = useState<{ text: string; n: number } | null>(null)
+  const [toast, setToast] = useState<{ text: string; kicker: string; n: number } | null>(null)
   const [reveal, setReveal] = useState<RevealData | null>(null)
   const [revealOpen, setRevealOpen] = useState(false)
   const [revealSeen, setRevealSeen] = useState(false)
-  const [confirmReveal, setConfirmReveal] = useState(false)
+  // giveup：没通关就揭晓；finish：通关后、还有真相没拼完时去看汤底
+  const [confirmReveal, setConfirmReveal] = useState<null | 'giveup' | 'finish'>(null)
   const [idle, setIdle] = useState(false)
   const lastActive = useRef(Date.now())
   const muted = useSyncExternalStore(
@@ -71,7 +72,9 @@ export function Game({ storyId }: { storyId: string }) {
     return () => clearInterval(t)
   }, [phase, thinking, revealOpen])
 
-  const showToast = (text: string) => setToast(t => ({ text, n: (t?.n ?? 0) + 1 }))
+  const showToast = (text: string, kicker = '你 察 觉 到') => setToast(t => ({ text, kicker, n: (t?.n ?? 0) + 1 }))
+  // 到了通关线不强制揭晓，让玩家自己决定什么时候看汤底
+  const announceSolved = (delay: number) => setTimeout(() => showToast('汤底可以看了', '通 关'), delay)
 
   // ---------- 动作 ----------
   const fail = (e: unknown) => {
@@ -95,6 +98,10 @@ export function Game({ storyId }: { storyId: string }) {
         const labels = r.session.found.filter(m => r.newMilestones.includes(m.id)).map(m => m.label)
         setTimeout(() => showToast(labels.join(' · ')), 500)
       }
+      // 问出来的就算数：对应的里程碑齐了，这一块真相自动拼上
+      const pieces = (r.newPieces ?? []).map(i => story?.pieces?.[i]?.title).filter(Boolean)
+      if (pieces.length) setTimeout(() => showToast(`拼出了一块真相：${pieces.join('、')}`), r.newMilestones.length ? 3200 : 500)
+      if (r.solved) announceSolved(pieces.length ? 6000 : 3000)
       if (r.cue) setCue(c => ({ id: r.cue!, n: (c?.n ?? 0) + 1 }))
       return true
     } catch (e) {
@@ -107,7 +114,7 @@ export function Game({ storyId }: { storyId: string }) {
 
   const openReveal = async () => {
     if (!session) return
-    setConfirmReveal(false)
+    setConfirmReveal(null)
     try {
       const r = await api.reveal(session.id)
       setSession(r.session)
@@ -127,7 +134,7 @@ export function Game({ storyId }: { storyId: string }) {
       const r = await api.guess(session.id, t)
       setSession(r.session)
       audio.stamp()
-      if (r.solved) setTimeout(openReveal, 1800)
+      if (r.solved) announceSolved(1200)
       return true
     } catch (e) {
       fail(e)
@@ -147,6 +154,13 @@ export function Game({ storyId }: { storyId: string }) {
     } catch (e) {
       fail(e)
     }
+  }
+
+  const showReveal = () => {
+    if (reveal) return setRevealOpen(true)
+    const left = (story?.pieces?.length ?? 0) - (session?.scoreHits.length ?? 0)
+    if (session?.status === 'solved' && !session.over && left > 0) setConfirmReveal('finish')
+    else openReveal()
   }
 
   const restart = async () => {
@@ -222,7 +236,7 @@ export function Game({ storyId }: { storyId: string }) {
 
         {toast && (
           <div key={toast.n} className="clue-toast pointer-events-none absolute inset-x-0 top-[22%] text-center">
-            <p className="text-[11px] tracking-[.6em] text-ash/70">你 察 觉 到</p>
+            <p className="text-[11px] tracking-[.6em] text-ash/70">{toast.kicker}</p>
             <p className="mt-2 font-hand text-4xl text-bone drop-shadow-[0_0_20px_rgba(160,20,10,.8)] sm:text-5xl">{toast.text}</p>
           </div>
         )}
@@ -239,8 +253,8 @@ export function Game({ storyId }: { storyId: string }) {
           onAsk={ask}
           onGuess={guess}
           onHint={hint}
-          onReveal={() => setConfirmReveal(true)}
-          onShowReveal={() => (reveal ? setRevealOpen(true) : openReveal())}
+          onReveal={() => setConfirmReveal('giveup')}
+          onShowReveal={showReveal}
           onActivity={activity}
         />
       </div>
@@ -249,16 +263,20 @@ export function Game({ storyId }: { storyId: string }) {
       <div className="scanlines" />
 
       {confirmReveal && (
-        <div className="fixed inset-0 z-[72] flex items-center justify-center bg-black/80 p-6" onClick={() => setConfirmReveal(false)}>
+        <div className="fixed inset-0 z-[72] flex items-center justify-center bg-black/80 p-6" onClick={() => setConfirmReveal(null)}>
           <div className="fade-in max-w-sm border border-white/10 bg-[#0d0b0a] p-7 text-center" onClick={e => e.stopPropagation()}>
-            <p className="font-hand text-3xl text-bone">真的不再想想吗？</p>
-            <p className="mt-4 text-sm leading-7 text-ash">揭晓之后，这一局就结束了。</p>
+            <p className="font-hand text-3xl text-bone">{confirmReveal === 'finish' ? '现在就看汤底吗？' : '真的不再想想吗？'}</p>
+            <p className="mt-4 text-sm leading-7 text-ash">
+              {confirmReveal === 'finish'
+                ? `还有 ${(story.pieces?.length ?? 0) - session.scoreHits.length} 块真相没拼出来。看过汤底，这一局就结束了。`
+                : '揭晓之后，这一局就结束了。'}
+            </p>
             <div className="mt-7 flex justify-center gap-3 text-sm">
-              <button onClick={() => setConfirmReveal(false)} className="border border-white/15 px-5 py-2 text-bone/80 hover:border-white/40">
-                再想想
+              <button onClick={() => setConfirmReveal(null)} className="border border-white/15 px-5 py-2 text-bone/80 hover:border-white/40">
+                {confirmReveal === 'finish' ? '继续问' : '再想想'}
               </button>
               <button onClick={openReveal} className="border border-blood/60 px-5 py-2 text-blood hover:bg-blood/10">
-                揭晓汤底
+                {confirmReveal === 'finish' ? '看汤底' : '揭晓汤底'}
               </button>
             </div>
           </div>

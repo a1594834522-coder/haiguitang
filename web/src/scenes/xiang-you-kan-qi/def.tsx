@@ -26,7 +26,7 @@ export const xiangYouKanQi: SceneDef = {
   accent: '#b0471f',
   tone: 'light',
   clock: q => ({ label: clockLabel(q), caption: q >= NOON_Q ? '正午' : '军训第三天' }),
-  surfaceSwaps: [{ milestone: 'chief', from: '老总教官在主席台上喊', to: '当年那个教官在主席台上喊' }],
+  surfaceSwaps: [{ milestone: 'chief', from: '带了四十年军训的老总教官', to: '当年那个教官' }],
   revealBeats,
   placeholder: ({ idle, milestones }) =>
     idle ? '……谁都不许动……' : milestones.includes('dead') ? '你还站在那里。继续问。' : '问一个只能回答“是”或“不是”的问题',

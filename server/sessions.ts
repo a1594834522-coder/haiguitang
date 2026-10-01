@@ -26,6 +26,8 @@ export type Session = {
   /** 上一次触发氛围反馈时的提问序号，用于冷却 */
   lastCueAt: number
   status: 'playing' | 'solved' | 'revealed'
+  /** 通关后看过汤底：这一局到此结束 */
+  closed?: boolean
 }
 
 /**

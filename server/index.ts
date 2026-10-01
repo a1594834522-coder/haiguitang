@@ -12,7 +12,7 @@ import { llmGate } from './llm.ts'
 import { RateLimiter } from './rateLimit.ts'
 import { QueueFullError, QueueTimeoutError } from './semaphore.ts'
 import { sessions, type Session } from './sessions.ts'
-import { catalogView, publicView, stories } from './stories.ts'
+import { catalogView, piecesFromMilestones, publicView, stories, type Story } from './stories.ts'
 
 const MAX_QUESTION = 200
 const MAX_GUESS = 1000
@@ -41,6 +41,17 @@ function scoreOf(s: Session) {
   return s.scoreHits.reduce((sum, i) => sum + (story.scoring.items[i]?.score ?? 0), 0)
 }
 
+/** 把提问中问出来的计分点并入得分；分数够了就算通关。返回新拿到的计分点 */
+function syncPieces(s: Session, story: Story): number[] {
+  const got = piecesFromMilestones(story, s.milestones).filter(i => !s.scoreHits.includes(i))
+  if (got.length) s.scoreHits = [...s.scoreHits, ...got].sort((a, b) => a - b)
+  if (s.status === 'playing' && scoreOf(s) >= story.host.passScore) s.status = 'solved'
+  return got
+}
+
+/** 通关不等于结束：通关后还能继续问，看过汤底才算这一局结束 */
+const isOver = (s: Session) => s.status === 'revealed' || !!s.closed
+
 function sessionView(s: Session) {
   const story = stories.get(s.storyId)!
   return {
@@ -55,6 +66,7 @@ function sessionView(s: Session) {
     score: scoreOf(s),
     questionCount: s.questionCount,
     status: s.status,
+    over: isOver(s),
   }
 }
 
@@ -108,7 +120,7 @@ app.post('/api/sessions/:id/ask', async c => {
   const q = String(question ?? '').trim()
   if (!q) fail(400, '你想问什么？')
   if (q.length > MAX_QUESTION) fail(400, `问题请控制在 ${MAX_QUESTION} 字以内。`)
-  if (s.status !== 'playing') fail(409, '这一局已经结束了。')
+  if (isOver(s)) fail(409, '这一局已经结束了。')
   if (s.questionCount >= config.session.maxQuestions) fail(409, '已经问得够多了，试着还原真相吧。')
 
   return guarded(c, s, async () => {
@@ -126,7 +138,10 @@ app.post('/api/sessions/:id/ask', async c => {
     let cue = r.type === 'answer' ? r.cue : null
     if (cue && s.questionCount - s.lastCueAt < CUE_COOLDOWN) cue = null
     if (cue) s.lastCueAt = s.questionCount
-    return c.json({ entry, newMilestones, cue, session: sessionView(s) })
+    const wasPlaying = s.status === 'playing'
+    const newPieces = syncPieces(s, story)
+    const solved = wasPlaying && s.status === 'solved'
+    return c.json({ entry, newMilestones, newPieces, solved, cue, session: sessionView(s) })
   })
 })
 
@@ -134,27 +149,28 @@ app.post('/api/sessions/:id/guess', async c => {
   const { s, story } = loadSession(c)
   const { text } = await readJSON<{ text: string }>(c)
   const t = String(text ?? '').trim()
-  if (t.length < 10) fail(400, '把你想到的真相完整地说出来。')
+  if (t.length < 4) fail(400, '多说几个字：你想明白了哪一部分？')
   if (t.length > MAX_GUESS) fail(400, `请控制在 ${MAX_GUESS} 字以内。`)
-  if (s.status !== 'playing') fail(409, '这一局已经结束了。')
+  if (isOver(s)) fail(409, '这一局已经结束了。')
   if (s.guessCount >= config.session.maxGuesses) fail(409, '还原次数用完了。')
 
   return guarded(c, s, async () => {
     const r = await judgeGuess(story, s, t)
     s.guessCount++
-    s.scoreHits = [...new Set([...s.scoreHits, ...r.hits])].sort()
+    const wasPlaying = s.status === 'playing'
+    s.scoreHits = [...new Set([...s.scoreHits, ...r.hits])].sort((a, b) => a - b)
+    syncPieces(s, story)
     const score = scoreOf(s)
     const entry = { kind: 'guess', text: t, score, hits: r.hits, feedback: r.feedback, at: Date.now() } as const
     s.entries.push(entry)
-    const solved = score >= story.host.passScore
-    if (solved) s.status = 'solved'
+    const solved = wasPlaying && s.status === 'solved'
     return c.json({ entry, solved, session: sessionView(s) })
   })
 })
 
 app.post('/api/sessions/:id/hint', async c => {
   const { s, story } = loadSession(c)
-  if (s.status !== 'playing') fail(409, '这一局已经结束了。')
+  if (isOver(s)) fail(409, '这一局已经结束了。')
   const r = await sessions.exclusive(s.id, async () => {
     const remaining = story.hints.filter(h => !s.hintsUsed.includes(h.level)).sort((a, b) => a.level - b.level)
     // 跳过所指向里程碑已经达成的提示
@@ -175,10 +191,9 @@ app.post('/api/sessions/:id/hint', async c => {
 app.post('/api/sessions/:id/reveal', async c => {
   const { s, story } = loadSession(c)
   if (story.host.lockReveal && s.status !== 'solved') fail(403, '这碗汤不公布答案。真相只能靠你自己问出来。')
-  if (s.status === 'playing') {
-    s.status = 'revealed'
-    sessions.touch()
-  }
+  if (s.status === 'playing') s.status = 'revealed'
+  else s.closed = true
+  sessions.touch()
   return c.json({
     session: sessionView(s),
     reveal: {

@@ -16,6 +16,8 @@ export type PublicStory = CatalogItem & {
   milestoneCount: number
   /** 答案锁住：只有还原通关后才能看汤底 */
   revealLocked: boolean
+  /** 还原面板上的“拼图”：模糊标题 + 分值；没有标题的剧本为 null */
+  pieces: { title: string; score: number }[] | null
 }
 
 export type SessionView = {
@@ -30,6 +32,8 @@ export type SessionView = {
   score: number
   questionCount: number
   status: 'playing' | 'solved' | 'revealed'
+  /** 这一局是否已结束（通关后还能继续问，看过汤底才算结束） */
+  over: boolean
 }
 
 export type Reveal = {

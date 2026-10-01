@@ -60,7 +60,10 @@ export async function judgeGuess(story: Story, session: Session, text: string): 
     : await chatJSON<{ hits?: unknown; feedback?: string }>(
         [
           { role: 'system', content: guessSystemPrompt(story) },
-          { role: 'user', content: `【玩家的还原】\n<<<\n${text}\n>>>` },
+          {
+            role: 'user',
+            content: `【已经拼出的计分点】${session.scoreHits.join('、') || '（无）'}\n\n【玩家的还原】\n<<<\n${text}\n>>>`,
+          },
         ],
         { maxTokens: 8000 },
       )

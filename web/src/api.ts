@@ -32,7 +32,7 @@ export const api = {
   createSession: (storyId: string) => call<SessionPayload>('/sessions', { storyId }),
   getSession: (id: string) => call<SessionPayload>(`/sessions/${id}`),
   ask: (id: string, question: string) =>
-    call<{ entry: Entry; newMilestones: string[]; cue: string | null; session: SessionView }>(`/sessions/${id}/ask`, { question }),
+    call<{ entry: Entry; newMilestones: string[]; newPieces: number[]; solved: boolean; cue: string | null; session: SessionView }>(`/sessions/${id}/ask`, { question }),
   guess: (id: string, text: string) => call<{ entry: Entry; solved: boolean; session: SessionView }>(`/sessions/${id}/guess`, { text }),
   hint: (id: string) => call<{ entry: Entry | null; session: SessionView }>(`/sessions/${id}/hint`, {}),
   reveal: (id: string) => call<{ session: SessionView; reveal: Reveal }>(`/sessions/${id}/reveal`, {}),

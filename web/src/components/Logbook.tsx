@@ -31,7 +31,11 @@ export function Logbook(p: Props) {
   const [showSurface, setShowSurface] = useState(true)
   const scroller = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLTextAreaElement>(null)
-  const playing = session.status === 'playing'
+  const solved = session.status === 'solved'
+  // 通关后还能继续问、继续还原；看过汤底才算结束
+  const over = session.over ?? session.status !== 'playing'
+  const pieces = story.pieces
+  const piecesLeft = pieces ? pieces.length - session.scoreHits.length : 0
   const hintsLeft = story.hintCount - session.hintsUsed.length
   const found = session.found ?? []
 
@@ -79,19 +83,19 @@ export function Logbook(p: Props) {
           <ToolButton onClick={() => setShowSurface(v => !v)} active={showSurface}>
             汤面
           </ToolButton>
-          {playing && (
+          {!over && (
             <ToolButton onClick={p.onHint} disabled={thinking || hintsLeft <= 0}>
               提示{hintsLeft > 0 ? ` ${hintsLeft}` : ''}
             </ToolButton>
           )}
-          {playing ? (
+          {!over && !solved ? (
             !story.revealLocked && (
               <ToolButton onClick={p.onReveal} danger>
                 揭晓
               </ToolButton>
             )
           ) : (
-            (session.status === 'solved' || !story.revealLocked) && (
+            (solved || !story.revealLocked) && (
               <ToolButton onClick={p.onShowReveal} danger>
                 汤底
               </ToolButton>
@@ -107,7 +111,7 @@ export function Logbook(p: Props) {
             <p>
               <SurfaceText text={story.surface} def={def} milestones={session.milestones} />
             </p>
-            {story.revealLocked && playing && (
+            {story.revealLocked && !over && !solved && (
               <p className="mt-2 border-t border-ink/15 pt-2 text-[12px] leading-6 text-blood/80">这碗汤不公布答案。真相只能靠你自己问出来，还原通关后才能看到汤底。</p>
             )}
           </section>
@@ -155,8 +159,18 @@ export function Logbook(p: Props) {
 
       {/* 输入区 */}
       <footer className="relative z-10 border-t border-ink/25 bg-[#9c8a63]/40 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2.5 sm:px-6">
-        {playing ? (
+        {!over ? (
           <>
+            {solved && (
+              <div className="ink-in mb-2 flex items-center gap-3 border-b border-ink/15 pb-2">
+                <p className="flex-1 text-[12px] leading-5 text-ink/65">
+                  {piecesLeft > 0 ? `已经通关。还有 ${piecesLeft} 块真相没拼出来，可以继续问下去。` : '真相已经全部拼出来了。'}
+                </p>
+                <button onClick={p.onShowReveal} className="shrink-0 font-hand text-xl text-blood hover:underline">
+                  查看汤底
+                </button>
+              </div>
+            )}
             <div className="mb-2 flex items-center gap-4 text-xs">
               {(['ask', 'guess'] as const).map(m => (
                 <button
@@ -171,6 +185,20 @@ export function Logbook(p: Props) {
                 {mode === 'ask' ? `第 ${session.questionCount + 1} 问` : `已得 ${session.score}/${story.scoringTotal} 分`}
               </span>
             </div>
+            {mode === 'guess' && pieces && (
+              <ul className="mb-2 flex flex-wrap gap-1.5 text-[11px]">
+                {pieces.map((pc, i) => {
+                  const got = session.scoreHits.includes(i)
+                  return (
+                    <li key={i} className={`rounded-sm border px-1.5 py-px ${got ? 'border-blood/40 text-blood/90' : 'border-dashed border-ink/30 text-ink/55'}`}>
+                      {got ? '✓ ' : ''}
+                      {pc.title}
+                      <span className="ml-1 text-ink/40">{pc.score}分</span>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
             <div className="flex items-end gap-2">
               <textarea
                 ref={input}
@@ -180,12 +208,14 @@ export function Logbook(p: Props) {
                   p.onActivity()
                 }}
                 onKeyDown={onKey}
-                rows={mode === 'ask' ? 2 : 4}
+                rows={mode === 'ask' ? 2 : 3}
                 maxLength={mode === 'ask' ? 200 : 1000}
                 placeholder={
                   mode === 'ask'
                     ? (def.placeholder?.({ idle: p.idle, milestones: session.milestones }) ?? '问一个只能回答“是”或“不是”的问题')
-                    : '把你想到的真相完整地写下来：发生了什么，为什么。（⌘/Ctrl + Enter 提交）'
+                    : pieces
+                      ? '只说你还没问出来的那部分就行，一两句即可。（⌘/Ctrl + Enter 提交）'
+                      : '把你想到的真相写下来：发生了什么，为什么。（⌘/Ctrl + Enter 提交）'
                 }
                 className={`min-h-0 flex-1 resize-none rounded-sm border border-ink/30 bg-[#e3d5b2]/55 px-3 py-2 text-[15px] leading-7 text-ink placeholder:text-ink/40 focus:border-ink/60 focus:outline-none ${p.idle && mode === 'ask' ? 'placeholder:text-blood/60' : ''}`}
               />
@@ -200,7 +230,7 @@ export function Logbook(p: Props) {
           </>
         ) : (
           <button onClick={p.onShowReveal} className="w-full py-3 font-hand text-2xl text-blood">
-            {session.status === 'solved' ? copy.solved : '查看汤底'}
+            {solved ? copy.solved : '查看汤底'}
           </button>
         )}
       </footer>
