@@ -1,0 +1,15 @@
+# 把 example.com 换成你的域名；Caddy 会自动申请 HTTPS 证书
+example.com {
+	encode zstd gzip
+
+	# 打包产物带 hash，可以长期缓存
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+
+	reverse_proxy 127.0.0.1:8787 {
+		# 主持人思考可能要几十秒，加上 SDK 重试
+		transport http {
+			read_timeout 150s
+		}
+	}
+}

@@ -1,0 +1,16 @@
+.gs-root { background: radial-gradient(ellipse at 50% 20%, #1a1412 0%, #070606 55%, #020202 100%); }
+.gs-fog { position: absolute; inset: -20%; filter: blur(40px); opacity: .5; mix-blend-mode: screen; }
+.gs-fog-a { background: radial-gradient(ellipse at 30% 70%, rgba(120, 110, 100, .12), transparent 50%); animation: gs-drift 38s ease-in-out infinite alternate; }
+.gs-fog-b { background: radial-gradient(ellipse at 70% 60%, rgba(140, 40, 30, calc(.04 + var(--heat) * .14)), transparent 55%); animation: gs-drift 52s ease-in-out infinite alternate-reverse; }
+@keyframes gs-drift { to { transform: translate(6%, -4%) scale(1.1) } }
+.gs-lamp {
+  position: absolute; left: 50%; top: -15vmin; width: 80vmin; height: 110vmin; transform-origin: 50% 0;
+  background: radial-gradient(ellipse at 50% 14%, rgba(255, 210, 160, .2), transparent 58%);
+  translate: -50% 0; animation: gs-swing 7s ease-in-out infinite, gs-flicker 5s steps(1) infinite;
+}
+.gs-thinking .gs-lamp { animation-duration: 3s, 1.1s; }
+@keyframes gs-swing { 0%, 100% { rotate: -4deg } 50% { rotate: 4deg } }
+@keyframes gs-flicker { 0%, 100% { opacity: 1 } 41% { opacity: .55 } 43% { opacity: 1 } 77% { opacity: .7 } 78% { opacity: 1 } }
+.gs-mote { position: absolute; border-radius: 50%; background: #d8cfc2; opacity: 0; animation: gs-mote linear infinite; }
+@keyframes gs-mote { 0% { opacity: 0; transform: translateY(0) } 30% { opacity: .4 } 100% { opacity: 0; transform: translate(20px, -90px) } }
+.gs-vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0, 0, 0, .9)); }

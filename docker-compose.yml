@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      TRUST_PROXY: "1"
+    # 只监听本机，由 Caddy / Nginx 反代出去
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - ./data:/app/data
+    # 给在途的 LLM 请求留时间收尾
+    stop_grace_period: 15s

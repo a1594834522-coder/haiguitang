@@ -1,0 +1,37 @@
+# 生产环境的 systemd 服务（目录结构见 deploy/server/setup.sh）
+# 安装：sudo cp deploy/haiguitang.service /etc/systemd/system/ && sudo systemctl enable --now haiguitang
+[Unit]
+Description=夜半汤馆 (haiguitang)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# current 是指向当前版本的软链接，每次发版原子切换
+WorkingDirectory=/opt/haiguitang/current
+User=haiguitang
+Group=haiguitang
+Environment=NODE_ENV=production
+# 只接受本机（Caddy）的连接
+Environment=HOST=127.0.0.1
+Environment=PORT=8797
+Environment=TRUST_PROXY=1
+# Cloudflare 回源最多等 100s：45s 超时 × 2 次
+Environment=LLM_MAX_RETRIES=1
+# .env（LLM_API_KEY 等）由程序自己读取，系统环境变量优先
+ExecStart=/opt/haiguitang/node/bin/node node_modules/.bin/tsx server/index.ts
+Restart=always
+RestartSec=3
+# 先 SIGTERM，等在途请求收尾、会话落盘
+KillSignal=SIGTERM
+TimeoutStopSec=15
+# 与同机其他服务隔离
+MemoryMax=1G
+CPUQuota=300%
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/opt/haiguitang/shared/data
+
+[Install]
+WantedBy=multi-user.target

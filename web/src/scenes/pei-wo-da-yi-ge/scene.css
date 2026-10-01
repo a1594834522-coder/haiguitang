@@ -1,0 +1,136 @@
+.pw-root { background: #050505; }
+.pw-root svg * { transform-box: fill-box; }
+.pw-serif { font-family: 'Noto Serif SC', serif; }
+.pw-hand { font-family: 'Ma Shan Zheng', 'Noto Serif SC', cursive; }
+.pw-fade { transition: opacity 2.4s ease; }
+
+/* 日光灯 */
+.pw-lamp .pw-tube { transition: opacity .1s; }
+.pw-flick .pw-tube { animation: pw-flick .26s steps(2) 1; }
+@keyframes pw-flick { 0% { opacity: .15 } 40% { opacity: 1 } 60% { opacity: .05 } 100% { opacity: 1 } }
+.pw-lamp-dying .pw-tube { animation: pw-die 1.8s steps(1) forwards; }
+@keyframes pw-die {
+  0% { opacity: 1 } 8% { opacity: .1 } 14% { opacity: 1 } 30% { opacity: .2 } 34% { opacity: .9 }
+  52% { opacity: 0 } 60% { opacity: .5 } 64% { opacity: 0 } 100% { opacity: 0 }
+}
+.pw-lamp-off .pw-tube { opacity: 0; }
+.pw-lamp-off .pw-tube:first-of-type { opacity: .12; }
+
+.pw-dust { animation: pw-dust linear infinite; }
+@keyframes pw-dust {
+  0% { transform: translate(0, 0); opacity: 0 }
+  20% { opacity: .6 }
+  50% { transform: translate(18px, -40px) }
+  80% { opacity: .5 }
+  100% { transform: translate(-10px, -80px); opacity: 0 }
+}
+
+/* 长明灯 */
+.pw-flame { transform-origin: 50% 100%; animation: pw-flame 1.6s ease-in-out infinite alternate; }
+@keyframes pw-flame {
+  0% { transform: scale(1, 1) skewX(0) } 30% { transform: scale(.92, 1.08) skewX(4deg) }
+  60% { transform: scale(1.05, .94) skewX(-3deg) } 100% { transform: scale(.96, 1.04) skewX(2deg) }
+}
+.pw-glow { transform-origin: center; animation: pw-glow 3.3s ease-in-out infinite; }
+@keyframes pw-glow {
+  0%, 100% { opacity: .9; transform: scale(1) } 17% { opacity: .78 } 23% { opacity: .95; transform: scale(1.015) }
+  48% { opacity: .82; transform: scale(.99) } 71% { opacity: 1 } 76% { opacity: .74 }
+}
+.pw-thinking .pw-glow { animation-duration: .9s; }
+.pw-thinking .pw-flame { animation-duration: .4s; }
+.pw-wall-shadow { transform-origin: 50% 100%; animation: pw-wall-shadow 3.3s ease-in-out infinite; }
+@keyframes pw-wall-shadow {
+  0%, 100% { transform: scale(1, 1) } 23% { transform: scale(1.02, 1.08) } 48% { transform: scale(.99, .96) } 76% { transform: scale(1.01, 1.12) }
+}
+.pw-ember { animation: pw-ember 2.4s ease-in-out infinite alternate; }
+@keyframes pw-ember { from { opacity: .5 } to { opacity: 1 } }
+.pw-smoke { animation: pw-smoke 7s linear infinite; }
+@keyframes pw-smoke {
+  0% { transform: translate(0, 0) scaleY(.6); opacity: 0 } 25% { opacity: 1 }
+  100% { transform: translate(6px, -30px) scaleY(1.2); opacity: 0 }
+}
+
+/* 氛围指令：烛火被风压低 / 一切安静下来 */
+.pw-gust .pw-glow { animation: pw-gust 1.4s ease-in-out 1; }
+.pw-gust .pw-flame { animation: pw-gust-flame 1.4s ease-in-out 1; }
+@keyframes pw-gust { 0% { opacity: .9 } 15% { opacity: .25 } 30% { opacity: .8 } 45% { opacity: .15 } 100% { opacity: .9 } }
+@keyframes pw-gust-flame { 0%, 100% { transform: scale(1) skewX(0) } 20% { transform: scale(.6, .4) skewX(30deg) } 50% { transform: scale(.8, .6) skewX(-20deg) } }
+.pw-stage { transition: filter 2s ease; }
+.pw-hush .pw-stage { filter: brightness(.55) saturate(.6); }
+
+/* 钟 */
+.pw-second { transform-origin: 50% 85%; transform-box: fill-box; animation: pw-sec 60s steps(60) infinite; }
+@keyframes pw-sec { to { transform: rotate(360deg) } }
+
+/* 球拍从台面挪到棺盖上 */
+.pw-root svg .pw-moth { transform-box: view-box; transform-origin: 800px 266px; animation: pw-moth 2.6s linear infinite; }
+@keyframes pw-moth {
+  0% { transform: rotate(0deg) translate(0, 0) } 25% { transform: rotate(90deg) translate(6px, -4px) }
+  50% { transform: rotate(180deg) translate(-4px, 6px) } 75% { transform: rotate(270deg) translate(5px, 3px) } 100% { transform: rotate(360deg) translate(0, 0) }
+}
+.pw-cloth { transform-origin: 50% 0; animation: pw-cloth 7s ease-in-out infinite; }
+@keyframes pw-cloth { 0%, 100% { transform: skewX(0) } 50% { transform: skewX(.8deg) } }
+.pw-root svg .pw-branch { transform-box: fill-box; transform-origin: 0% 100%; animation: pw-branch 6s ease-in-out infinite; }
+.pw-root svg .pw-branch-b { animation-duration: 8s; animation-delay: -3s; }
+@keyframes pw-branch { 0%, 100% { transform: rotate(0) } 50% { transform: rotate(2.2deg) } }
+.pw-eyes { animation: pw-eyes 7s steps(1) infinite; }
+@keyframes pw-eyes { 0%, 100% { opacity: .55 } 46% { opacity: 0 } 48% { opacity: .55 } 80% { opacity: .35 } }
+.pw-hot { fill: #fff; fill-opacity: 0; cursor: zoom-in; pointer-events: all; transition: fill-opacity .4s; }
+.pw-hot:hover { fill-opacity: .035; }
+.pw-inspect { animation: fade-in .5s ease both; }
+.pw-inspect-item { animation: pw-zoom .7s cubic-bezier(.2, .7, .2, 1) both; }
+@keyframes pw-zoom { from { transform: scale(.82); opacity: 0; filter: blur(6px) } to { transform: none; opacity: 1; filter: none } }
+.pw-inspect-glow { background: radial-gradient(ellipse at 50% 85%, rgba(255, 140, 50, .14), transparent 60%); animation: pw-glow 3.3s ease-in-out infinite; }
+.pt-blink { animation: pt-blink .32s ease-in-out 1 forwards; }
+@keyframes pt-blink { 0% { transform: scaleY(0) } 45% { transform: scaleY(1) } 100% { transform: scaleY(0) } }
+.pt-crack { animation: fade-in 1.2s ease both; }
+
+.pw-root svg .pw-paddle { transform-box: view-box; transform-origin: 0 0; transition: transform 2.4s cubic-bezier(.4, 0, .2, 1); }
+
+/* 门 */
+.pw-door { transform-origin: 0 50%; transition: transform 1.6s cubic-bezier(.4, 0, .2, 1); }
+.pw-door-inside { transition: opacity 1.2s ease; }
+.pw-father-stay { animation: pw-sway 9s ease-in-out infinite; transform-origin: 50% 100%; }
+@keyframes pw-sway { 0%, 100% { transform: rotate(0) } 50% { transform: rotate(.8deg) } }
+
+/* 记分牌翻牌 */
+.pw-flip { animation: pw-flip .35s ease-out; transform-origin: 50% 0; }
+@keyframes pw-flip { from { transform: scaleY(.1); opacity: .2 } to { transform: scaleY(1); opacity: 1 } }
+
+/* 看得见的声音 */
+.pw-knock-text { animation: pw-knock 2.2s ease-out forwards; opacity: 0; }
+@keyframes pw-knock {
+  0% { opacity: 0; transform: translateY(6px) scale(.8) } 12% { opacity: .9; transform: translateY(0) scale(1) }
+  100% { opacity: 0; transform: translateY(-36px) scale(1.1) }
+}
+.pw-knock-in { filter: blur(1.2px); }
+
+/* 纸钱 */
+.pw-paper {
+  position: absolute; top: -6%; width: 13px; height: 13px; opacity: .38;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><path fill-rule='evenodd' fill='%23a89a72' d='M10 0a10 10 0 1 1 0 20a10 10 0 1 1 0-20zM7.5 7.5v5h5v-5z'/></svg>") center / contain no-repeat;
+  animation: pw-paper linear infinite;
+}
+@keyframes pw-paper {
+  0% { transform: translate(0, 0) rotate(0) rotateX(0) }
+  25% { transform: translate(40px, 28vh) rotate(90deg) rotateX(180deg) }
+  50% { transform: translate(-20px, 56vh) rotate(200deg) rotateX(360deg) }
+  75% { transform: translate(30px, 84vh) rotate(290deg) rotateX(540deg) }
+  100% { transform: translate(0, 112vh) rotate(380deg) rotateX(720deg) }
+}
+
+/* 救 */
+.pw-jiu { animation: pw-jiu-bg 2.8s ease-out forwards; }
+.pw-jiu span {
+  font-size: min(48vw, 60vh); line-height: 1; color: #7d0d0a;
+  text-shadow: 0 0 40px #3a0000; animation: pw-jiu 2.8s ease-out forwards;
+}
+@keyframes pw-jiu-bg { 0% { background: #000 } 12% { background: #000 } 100% { background: transparent } }
+@keyframes pw-jiu {
+  0% { opacity: 0; transform: scale(1.3); filter: blur(12px) } 10% { opacity: 1; transform: scale(1); filter: blur(0) }
+  14% { opacity: .2 } 18% { opacity: 1 } 100% { opacity: 0; transform: scale(.94); filter: blur(4px) }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pw-root *, .pw-paper, .pw-jiu, .pw-jiu span { animation-duration: 0s !important; animation-iteration-count: 1 !important; }
+}
