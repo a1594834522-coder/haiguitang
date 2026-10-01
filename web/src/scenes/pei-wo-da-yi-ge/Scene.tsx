@@ -211,7 +211,7 @@ export function Scene({ milestones, questionCount, thinking, idle, paused, cue }
       audio.creak({ pan: -0.6 })
       setFatherVisit(true)
       const t = setTimeout(() => {
-        audio.creak({ pan: -0.6, vol: 0.25 })
+        audio.creak({ pan: -0.6, vol: 0.3, closing: true })
         setFatherVisit(false)
       }, 7500)
       return () => clearTimeout(t)

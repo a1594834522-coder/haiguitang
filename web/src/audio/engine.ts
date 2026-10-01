@@ -4,6 +4,12 @@
  */
 type Voice = { vol?: number; pan?: number; wet?: number }
 
+/** 每次发声都略有不同：x 上下浮动 r */
+const jitter = (x: number, r = 0.05) => x * (1 - r + Math.random() * 2 * r)
+// 电平校准（窄带共鸣的输出很小，需要较大的增益）
+const PING_LEVEL = 2.3
+const CREAK_LEVEL = 2.8
+
 class AudioEngine {
   private ctx: AudioContext | null = null
   private master!: GainNode
@@ -109,33 +115,54 @@ class AudioEngine {
 
   // ---------- 一次性音效 ----------
 
-  /** 乒：球拍敲在木头上，干脆、清亮 */
+  /**
+   * 乒：球拍敲在棺材盖上。木头碰木头，脆、短，底下是空的。
+   * 一下极短的接触声，激起盖板的几个共鸣；不做音高滑动（滑音会像电子“哔”）。
+   */
   ping(v: Voice = {}) {
     if (!this.ctx) return
     const ctx = this.ctx
     const t = ctx.currentTime + 0.005
     const out = this.out({ wet: 0.7, ...v })
+    const tone = ctx.createBiquadFilter()
+    tone.type = 'lowpass'
+    tone.frequency.value = jitter(5200, 0.08)
+    tone.connect(out)
 
     const n = this.noiseSrc()
-    const bp = ctx.createBiquadFilter()
-    bp.type = 'bandpass'
-    bp.frequency.value = 2100
-    bp.Q.value = 2.5
-    const ng = ctx.createGain()
-    this.env(ng, t, 0.9, 0.001, 0.05)
-    n.connect(bp).connect(ng).connect(out)
-    n.start(t)
-    n.stop(t + 0.1)
+    const burst = ctx.createGain()
+    burst.gain.setValueAtTime(0, t)
+    burst.gain.linearRampToValueAtTime(1, t + 0.0008)
+    burst.gain.exponentialRampToValueAtTime(0.001, t + jitter(0.011, 0.15))
+    n.connect(burst)
+    n.start(t, Math.random() * 1.8)
+    n.stop(t + 0.03)
 
-    const o = ctx.createOscillator()
-    o.type = 'sine'
-    o.frequency.setValueAtTime(1350, t)
-    o.frequency.exponentialRampToValueAtTime(820, t + 0.06)
-    const og = ctx.createGain()
-    this.env(og, t, 0.45, 0.001, 0.08)
-    o.connect(og).connect(out)
-    o.start(t)
-    o.stop(t + 0.12)
+    // 拍面碰到木板的“嗒”
+    const click = ctx.createBiquadFilter()
+    click.type = 'highpass'
+    click.frequency.value = 1800
+    const cg = ctx.createGain()
+    cg.gain.value = PING_LEVEL * 0.35
+    burst.connect(click).connect(cg).connect(tone)
+
+    // 盖板的共鸣 + 底下空箱子的一点低音
+    const board = jitter(1, 0.03)
+    for (const [f, q, g] of [
+      [560, 14, 5.5],
+      [910, 16, 4.2],
+      [1460, 14, 2.6],
+      [2240, 12, 1.3],
+      [190, 5, 2.2],
+    ] as const) {
+      const bp = ctx.createBiquadFilter()
+      bp.type = 'bandpass'
+      bp.frequency.value = jitter(f * board, 0.015)
+      bp.Q.value = q
+      const bg = ctx.createGain()
+      bg.gain.value = PING_LEVEL * g
+      burst.connect(bp).connect(bg).connect(tone)
+    }
   }
 
   /**
@@ -148,7 +175,7 @@ class AudioEngine {
     const ctx = this.ctx
     const t = ctx.currentTime + 0.01
     const vol = v.vol ?? 1
-    const j = (x: number, r = 0.05) => x * (1 - r + Math.random() * 2 * r)
+    const j = jitter
 
     // 隔着一层木板，高频几乎都被吃掉
     const muffle = ctx.createBiquadFilter()
@@ -250,30 +277,137 @@ class AudioEngine {
     b.stop(t + 0.3)
   }
 
-  /** 老木门的吱呀声 */
-  creak(v: Voice = {}) {
+  /** 门把手 / 门扣的“咔哒”：一点金属，一点木头 */
+  private latch(t: number, out: AudioNode, amp: number) {
+    const ctx = this.ctx!
+    const n = this.noiseSrc()
+    const g = ctx.createGain()
+    g.gain.setValueAtTime(0, t)
+    g.gain.linearRampToValueAtTime(amp, t + 0.001)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.012)
+    const hp = ctx.createBiquadFilter()
+    hp.type = 'highpass'
+    hp.frequency.value = 2600
+    n.connect(hp).connect(g).connect(out)
+    n.start(t, Math.random() * 1.8)
+    n.stop(t + 0.03)
+    for (const [f, d, a] of [
+      [jitter(2950), 0.05, 0.12],
+      [jitter(4380), 0.035, 0.07],
+      [jitter(210), 0.06, 0.25],
+    ] as const) {
+      const o = ctx.createOscillator()
+      o.frequency.value = f
+      const og = ctx.createGain()
+      og.gain.setValueAtTime(0, t)
+      og.gain.linearRampToValueAtTime(amp * a, t + 0.001)
+      og.gain.exponentialRampToValueAtTime(0.0001, t + d)
+      o.connect(og).connect(out)
+      o.start(t)
+      o.stop(t + d + 0.01)
+    }
+  }
+
+  /**
+   * 老木门的吱呀声。
+   * 门轴的吱呀是摩擦“粘住—滑开”一顿一顿发出来的：用一串很窄的脉冲模拟，
+   * 脉冲的快慢和力度都不规则地变化，再经过木头和合页的共鸣。
+   * 开门前先拧一下把手；关门时吱呀短一些，最后“咔哒”扣上。
+   */
+  creak(v: Voice & { closing?: boolean } = {}) {
     if (!this.ctx) return
     const ctx = this.ctx
+    const closing = !!v.closing
     const t = ctx.currentTime + 0.01
-    const dur = 1.8
-    const out = this.out({ wet: 0.7, vol: 0.35, ...v })
+    const out = this.out({ wet: 0.65, vol: 0.5, ...v })
+    if (!closing) this.latch(t, out, 0.3)
+
+    const start = closing ? t : t + jitter(0.16, 0.2)
+    const dur = closing ? jitter(1.0, 0.1) : jitter(2.0, 0.1)
+    const steps = 220
+    const rate = new Float32Array(steps)
+    const amp = new Float32Array(steps)
+    let wander = 0
+    let gap = 0
+    for (let i = 0; i < steps; i++) {
+      const x = i / (steps - 1)
+      // 推门：先慢后快再慢；中段会突然尖一下
+      const contour = closing ? 40 + 110 * x : 26 + 120 * Math.pow(Math.sin(Math.PI * Math.min(1, x * 1.15)), 0.8)
+      const squeal = !closing && x > 0.42 && x < 0.55 ? 1 + 0.9 * Math.sin(((x - 0.42) / 0.13) * Math.PI) : 1
+      wander = wander * 0.85 + (Math.random() - 0.5) * 0.3
+      rate[i] = Math.max(10, contour * squeal * (1 + wander))
+      // 力度：整体起伏 + 颗粒感，偶尔卡住一下
+      if (gap > 0) gap--
+      else if (Math.random() < 0.025) gap = 2 + Math.floor(Math.random() * 4)
+      const body = Math.pow(Math.sin(Math.PI * x), 0.5)
+      amp[i] = gap > 0 ? 0.05 : body * (0.55 + 0.45 * Math.random())
+    }
+    amp[0] = 0
+    amp[steps - 1] = 0
+
+    // 很窄的脉冲：所有谐波等幅叠加
+    const H = 64
+    const real = new Float32Array(H).fill(1)
+    real[0] = 0
     const o = ctx.createOscillator()
-    o.type = 'sawtooth'
-    o.frequency.setValueAtTime(70, t)
-    for (let i = 1; i <= 12; i++) o.frequency.linearRampToValueAtTime(60 + Math.random() * 45, t + (dur * i) / 12)
-    const bp = ctx.createBiquadFilter()
-    bp.type = 'bandpass'
-    bp.frequency.setValueAtTime(700, t)
-    bp.frequency.linearRampToValueAtTime(1100, t + dur)
-    bp.Q.value = 9
+    o.setPeriodicWave(ctx.createPeriodicWave(real, new Float32Array(H)))
+    o.frequency.setValueCurveAtTime(rate, start, dur)
     const g = ctx.createGain()
-    g.gain.setValueAtTime(0.0001, t)
-    g.gain.linearRampToValueAtTime(1, t + 0.25)
-    g.gain.setValueAtTime(1, t + dur - 0.5)
-    g.gain.linearRampToValueAtTime(0.0001, t + dur)
-    o.connect(bp).connect(g).connect(out)
-    o.start(t)
-    o.stop(t + dur + 0.05)
+    g.gain.value = 0
+    g.gain.setValueCurveAtTime(amp, start, dur)
+    o.connect(g)
+
+    const sum = ctx.createGain()
+    sum.gain.value = CREAK_LEVEL
+    const lp = ctx.createBiquadFilter()
+    lp.type = 'lowpass'
+    lp.frequency.value = 4200
+    sum.connect(lp).connect(out)
+    // 门板、合页的共鸣
+    for (const [f, q, a] of [
+      [jitter(640), 6, 1],
+      [jitter(1190), 11, 0.8],
+      [jitter(1950), 14, 0.55],
+      [jitter(2880), 16, 0.3],
+    ] as const) {
+      const bp = ctx.createBiquadFilter()
+      bp.type = 'bandpass'
+      bp.frequency.value = f
+      bp.Q.value = q
+      const bg = ctx.createGain()
+      bg.gain.value = a
+      g.connect(bp).connect(bg).connect(sum)
+    }
+    // 一点摩擦的沙沙声，跟着同一条力度走
+    const n = this.noiseSrc()
+    const nbp = ctx.createBiquadFilter()
+    nbp.type = 'bandpass'
+    nbp.frequency.value = 2300
+    nbp.Q.value = 0.8
+    const ng = ctx.createGain()
+    ng.gain.value = 0
+    ng.gain.setValueCurveAtTime(amp.map(a => a * 0.05), start, dur)
+    n.connect(nbp).connect(ng).connect(sum)
+
+    o.start(start)
+    o.stop(start + dur + 0.02)
+    n.start(start, Math.random() * 1.8)
+    n.stop(start + dur + 0.02)
+
+    if (closing) {
+      this.latch(start + dur, out, 0.45)
+      // 门板撞上门框的闷响
+      const b = ctx.createOscillator()
+      b.frequency.setValueAtTime(jitter(92), start + dur)
+      b.frequency.exponentialRampToValueAtTime(70, start + dur + 0.12)
+      const bg = ctx.createGain()
+      bg.gain.setValueAtTime(0, start + dur)
+      bg.gain.linearRampToValueAtTime(0.5, start + dur + 0.004)
+      bg.gain.exponentialRampToValueAtTime(0.0001, start + dur + 0.22)
+      b.connect(bg).connect(out)
+      b.start(start + dur)
+      b.stop(start + dur + 0.25)
+    }
   }
 
   /** 极轻的气声，像隔着木板的一个字 */
