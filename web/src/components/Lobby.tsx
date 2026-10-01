@@ -67,7 +67,7 @@ function StoryCard({ story, index }: { story: CatalogItem; index: number }) {
       style={{ animationDelay: `${index * 120}ms` }}
     >
       <div className="relative h-44 overflow-hidden">
-        {Art ? <Art /> : null}
+        {def.cover ? <img src={def.cover} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" /> : Art ? <Art /> : null}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0c0a09] via-transparent to-transparent" />
         <div className="absolute inset-0 opacity-0 transition duration-700 group-hover:opacity-100" style={{ boxShadow: `inset 0 0 80px ${def.accent}55` }} />
       </div>

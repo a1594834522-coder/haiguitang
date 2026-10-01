@@ -41,7 +41,9 @@ export type SceneDef = {
   placeholder?: (s: { idle: boolean; milestones: string[] }) => string
   /** 开场前的一句耳语 */
   whisper?: string
-  /** 目录页卡片上的小插画 */
+  /** 目录页卡片的封面图（约 2:1），优先于 CardArt */
+  cover?: string
+  /** 没有封面图时，卡片上的小插画 */
   CardArt?: ComponentType
   /** 场景整体是亮色（白天）时设为 light，界面文字改用深色 */
   tone?: 'dark' | 'light'

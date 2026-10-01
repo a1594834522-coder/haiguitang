@@ -1,5 +1,6 @@
 import { audio } from '../../audio/engine'
 import type { RevealBeat, SceneDef } from '../types'
+import cover from './cover.jpg'
 import { Scene } from './Scene'
 import { DAWN_Q, FATHER_Q, clockLabel } from './time'
 
@@ -47,33 +48,6 @@ function revealBeats(bottom: string[]): RevealBeat[] {
   return beats
 }
 
-function CardArt() {
-  return (
-    <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" className="h-full w-full">
-      <defs>
-        <radialGradient id="ca-g" cx="0.5" cy="0.62" r="0.6">
-          <stop offset="0" stopColor="#3a0d0a" />
-          <stop offset="1" stopColor="#060404" />
-        </radialGradient>
-        <radialGradient id="ca-l" cx="0.5" cy="0.4" r="0.5">
-          <stop offset="0" stopColor="#dfeee6" stopOpacity=".12" />
-          <stop offset="1" stopColor="#dfeee6" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <rect width="320" height="180" fill="url(#ca-g)" />
-      <polygon points="40,128 280,128 300,150 20,150" fill="#0b2a24" stroke="#c9d6cf" strokeOpacity=".25" />
-      <polygon points="40,128 280,128 300,150 20,150" fill="url(#ca-l)" />
-      <g transform="translate(170 138) rotate(-4) scale(1 .7)">
-        <rect x="16" y="-3" width="26" height="7" rx="2" fill="#6b4a2a" />
-        <ellipse rx="22" ry="9" fill="#7a1612" />
-      </g>
-      <text x="160" y="56" textAnchor="middle" fontSize="20" fill="#7d0d0a" opacity=".7" style={{ fontFamily: 'Ma Shan Zheng, serif' }}>
-        球……
-      </text>
-    </svg>
-  )
-}
-
 export const peiWoDaYiGe: SceneDef = {
   Scene,
   accent: '#8e1b17',
@@ -86,6 +60,6 @@ export const peiWoDaYiGe: SceneDef = {
   placeholder: ({ idle, milestones }) =>
     idle ? '……球……球……' : milestones.includes('help') ? '他还在里面。继续问。' : '问一个只能回答“是”或“不是”的问题',
   whisper: '“来，陪我打一个。”',
-  CardArt,
+  cover,
   copy: { enter: '推开训练馆的门', resume: '回到那一夜', logbook: '训 练 记 录', titlePrefix: '一号台 · ', solved: '你看见了那一夜 · 查看汤底' },
 }
