@@ -138,36 +138,78 @@ class AudioEngine {
     o.stop(t + 0.12)
   }
 
-  /** 咚：从密闭木箱里面传出来的闷响 */
+  /**
+   * 咚：有人在密闭的木箱里，从里面拍了一下盖板。
+   * 闷、空、短：手掌拍上去的一下噪声冲击，激起木箱的几个共鸣（固定音高、很快衰减，
+   * 不做大幅滑音，否则像电子底鼓），紧接着盖板在框上轻轻弹一下。每一下都略有不同。
+   */
   thump(v: Voice = {}) {
     if (!this.ctx) return
     const ctx = this.ctx
-    const t = ctx.currentTime + 0.005
+    const t = ctx.currentTime + 0.01
     const vol = v.vol ?? 1
+    const j = (x: number, r = 0.05) => x * (1 - r + Math.random() * 2 * r)
+
+    // 隔着一层木板，高频几乎都被吃掉
     const muffle = ctx.createBiquadFilter()
     muffle.type = 'lowpass'
-    muffle.frequency.value = 520
-    const out = this.out({ wet: 0.35, ...v, vol: 1 })
+    muffle.frequency.value = j(820)
+    muffle.Q.value = 0.4
+    const out = this.out({ wet: 0.42, ...v, vol: 1 })
     muffle.connect(out)
 
-    const o = ctx.createOscillator()
-    o.frequency.setValueAtTime(115, t)
-    o.frequency.exponentialRampToValueAtTime(52, t + 0.18)
-    const og = ctx.createGain()
-    this.env(og, t, 1.1 * vol, 0.004, 0.32)
-    o.connect(og).connect(muffle)
-    o.start(t)
-    o.stop(t + 0.4)
+    const box = j(1, 0.04) // 整个箱体的音高
+    const hit = (at: number, amp: number) => {
+      const n = this.noiseSrc()
+      const burst = ctx.createGain()
+      burst.gain.setValueAtTime(0, at)
+      burst.gain.linearRampToValueAtTime(1, at + 0.002)
+      burst.gain.exponentialRampToValueAtTime(0.001, at + j(0.03))
+      n.connect(burst)
+      n.start(at, Math.random() * 1.8)
+      n.stop(at + 0.06)
 
-    const n = this.noiseSrc()
-    const lp = ctx.createBiquadFilter()
-    lp.type = 'lowpass'
-    lp.frequency.value = 320
-    const ng = ctx.createGain()
-    this.env(ng, t, 0.8 * vol, 0.002, 0.14)
-    n.connect(lp).connect(ng).connect(muffle)
-    n.start(t)
-    n.stop(t + 0.2)
+      // 手掌拍在板上的“啪”，被闷住之后只剩中低频
+      const slap = ctx.createBiquadFilter()
+      slap.type = 'bandpass'
+      slap.frequency.value = j(420)
+      slap.Q.value = 0.8
+      const sg = ctx.createGain()
+      sg.gain.value = amp * 0.9
+      burst.connect(slap).connect(sg).connect(muffle)
+
+      // 木箱的共鸣：用窄带滤波器让噪声“响”起来，比纯正弦更像木头
+      for (const [f, q, g] of [
+        [150, 9, 5.5],
+        [236, 8, 3.2],
+        [371, 6, 1.6],
+      ] as const) {
+        const bp = ctx.createBiquadFilter()
+        bp.type = 'bandpass'
+        bp.frequency.value = j(f * box, 0.02)
+        bp.Q.value = q
+        const bg = ctx.createGain()
+        bg.gain.value = amp * g
+        burst.connect(bp).connect(bg).connect(muffle)
+      }
+
+      // 箱体最低的一个模态，给一点分量；只有很小的音高回落
+      const o = ctx.createOscillator()
+      const f0 = 88 * box
+      o.frequency.setValueAtTime(f0 * 1.05, at)
+      o.frequency.exponentialRampToValueAtTime(f0, at + 0.04)
+      const og = ctx.createGain()
+      og.gain.setValueAtTime(0, at)
+      og.gain.linearRampToValueAtTime(amp * 0.42, at + 0.005)
+      og.gain.exponentialRampToValueAtTime(0.0001, at + j(0.2))
+      o.connect(og).connect(muffle)
+      o.start(at)
+      o.stop(at + 0.24)
+    }
+
+    hit(t, 1.6 * vol)
+    // 盖板在框上弹了一下
+    hit(t + j(0.026, 0.2), 0.34 * vol)
   }
 
   /** 锤子砸钉子：金属 + 木头，尖锐 */
