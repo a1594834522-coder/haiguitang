@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import canteenPhoto from './photos/canteen.webp'
 import chiefLook from './photos/chief-look.webp'
 import chiefStare from './photos/chief-stare.webp'
 
@@ -17,7 +18,7 @@ function caption(t: InspectTarget, has: (m: string) => boolean): string {
       return '教官的点名册。一连，三排。第七格被擦过，纸起了毛。'
     case 'canteen':
       if (has('voice')) return '它一直放在这里。从来没有人来拿。'
-      return '地上有个旧水壶，掉了漆，晒得发烫。不知道是谁的。'
+      return '地上有个旧水壶，布套晒褪了色，开了线。不知道是谁的。'
   }
 }
 
@@ -140,39 +141,29 @@ function RosterCloseup({ state }: { state: 'erased' | 'blank' | 'girl' }) {
   )
 }
 
+/** 地上的旧水壶，凑近了看 */
 function CanteenCloseup() {
   return (
-    <svg viewBox="0 0 420 460" className="h-[58vh] max-h-[480px] w-auto max-w-full drop-shadow-[0_30px_40px_rgba(0,0,0,.9)]">
+    <svg viewBox="0 0 400 400" className="h-[58vh] max-h-[480px] w-auto max-w-full drop-shadow-[0_30px_40px_rgba(0,0,0,.9)]">
       <defs>
-        <linearGradient id="cn-body" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#3e4430" />
-          <stop offset="0.35" stopColor="#6d7550" />
-          <stop offset="0.6" stopColor="#5b6243" />
-          <stop offset="1" stopColor="#2c3022" />
-        </linearGradient>
-        <filter id="cn-chip" colorInterpolationFilters="sRGB" x="0" y="0" width="100%" height="100%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="4" seed="21" />
-          <feColorMatrix type="matrix" values="0 0 0 0 0.66  0 0 0 0 0.66  0 0 0 0 0.62  0 0 0 -22 6.9" />
-          <feComposite in2="SourceGraphic" operator="in" />
+        <radialGradient id="cn-edge" cx="0.5" cy="0.5" r="0.7">
+          <stop offset="0.6" stopColor="#000" stopOpacity="0" />
+          <stop offset="1" stopColor="#000" stopOpacity="0.85" />
+        </radialGradient>
+        <filter id="cn-heat" colorInterpolationFilters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.003 0.03" numOctaves="2" seed="4">
+            <animate attributeName="seed" values="4;5;6;7;4" dur="2.4s" repeatCount="indefinite" calcMode="discrete" />
+          </feTurbulence>
+          <feDisplacementMap in="SourceGraphic" scale="4" xChannelSelector="R" yChannelSelector="G" />
         </filter>
+        <clipPath id="cn-clip">
+          <rect width="400" height="400" rx="6" />
+        </clipPath>
       </defs>
-      {/* 地面 */}
-      <ellipse cx="210" cy="420" rx="170" ry="28" fill="#000" opacity="0.5" />
-      {/* 背带 */}
-      <path d="M120 120 Q60 260 110 420" stroke="#4a4630" strokeWidth="14" fill="none" />
-      <path d="M300 120 Q380 300 330 430" stroke="#3e3b28" strokeWidth="14" fill="none" />
-      {/* 壶身：铝壶，凹了几处 */}
-      <path d="M110 150 Q100 110 150 100 L270 100 Q320 110 310 150 L318 360 Q318 410 210 412 Q102 410 102 360 Z" fill="url(#cn-body)" />
-      <path d="M110 150 Q100 110 150 100 L270 100 Q320 110 310 150 L318 360 Q318 410 210 412 Q102 410 102 360 Z" fill="#fff" filter="url(#cn-chip)" />
-      <ellipse cx="160" cy="260" rx="26" ry="40" fill="#000" opacity="0.18" />
-      <ellipse cx="268" cy="320" rx="20" ry="16" fill="#000" opacity="0.22" />
-      <path d="M150 140 Q140 260 150 380" stroke="#e8e4d0" strokeOpacity="0.18" strokeWidth="12" fill="none" />
-      {/* 壶嘴和盖子 */}
-      <rect x="180" y="60" width="60" height="44" rx="6" fill="#2f2f28" />
-      <rect x="172" y="50" width="76" height="16" rx="4" fill="#3a3a32" />
-      <path d="M240 64 Q270 60 280 90" stroke="#5c5a4e" strokeWidth="4" fill="none" />
-      {/* 掉漆处写过字，已经看不清了 */}
-      <path d="M180 220 l14 -4 m6 2 l10 -2 m-26 14 l20 -2" stroke="#2a2a22" strokeWidth="2.5" opacity="0.35" />
+      <g clipPath="url(#cn-clip)">
+        <image href={canteenPhoto} width="400" height="400" filter="url(#cn-heat)" />
+        <rect width="400" height="400" fill="url(#cn-edge)" />
+      </g>
     </svg>
   )
 }
