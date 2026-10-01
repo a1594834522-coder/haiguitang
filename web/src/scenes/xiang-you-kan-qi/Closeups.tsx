@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { Elder } from './Figure'
+import chiefLook from './photos/chief-look.webp'
+import chiefStare from './photos/chief-stare.webp'
 
 export type InspectTarget = 'chief' | 'roster' | 'canteen'
 
@@ -32,7 +33,7 @@ export function Inspect({ target, milestones, onClose }: { target: InspectTarget
     <div className="xy-inspect fixed inset-0 z-[58] flex cursor-zoom-out flex-col items-center justify-center bg-black/85 px-6" onClick={onClose}>
       <div className="xy-inspect-glow pointer-events-none absolute inset-0" />
       <div className="xy-inspect-item relative flex max-h-[66vh] w-full max-w-[min(88vw,560px)] items-center justify-center">
-        {target === 'chief' && <ChiefCloseup gaze={has('chief') ? 0 : has('line') ? 1 : 0} stare={has('chief')} />}
+        {target === 'chief' && <ChiefCloseup stare={has('chief')} />}
         {target === 'roster' && <RosterCloseup state={has('girl') ? 'girl' : has('dead') ? 'blank' : 'erased'} />}
         {target === 'canteen' && <CanteenCloseup />}
       </div>
@@ -44,8 +45,8 @@ export function Inspect({ target, milestones, onClose }: { target: InspectTarget
   )
 }
 
-/** 隔着热浪，用望远镜看主席台 */
-function ChiefCloseup({ gaze, stare }: { gaze: number; stare: boolean }) {
+/** 隔着热浪，用望远镜看主席台。两张照片只有眼神不同：一直盯着角落 / 盯着“我” */
+function ChiefCloseup({ stare }: { stare: boolean }) {
   return (
     <svg viewBox="0 0 400 400" className="h-[58vh] max-h-[460px] w-auto max-w-full">
       <defs>
@@ -60,22 +61,15 @@ function ChiefCloseup({ gaze, stare }: { gaze: number; stare: boolean }) {
           <feTurbulence type="fractalNoise" baseFrequency="0.004 0.04" numOctaves="2" seed="2">
             <animate attributeName="seed" values="2;3;4;5;2" dur="2s" repeatCount="indefinite" calcMode="discrete" />
           </feTurbulence>
-          <feDisplacementMap in="SourceGraphic" scale="9" xChannelSelector="R" yChannelSelector="G" />
+          <feDisplacementMap in="SourceGraphic" scale="6" xChannelSelector="R" yChannelSelector="G" />
         </filter>
       </defs>
       <g clipPath="url(#cc-lens)">
-        <rect width="400" height="400" fill="#c9c4b5" />
-        <rect x="0" y="40" width="400" height="70" fill="#9d2a1d" />
-        <text x="200" y="92" textAnchor="middle" fontSize="44" fill="#f1e2b8" letterSpacing="20" className="xy-serif" fontWeight="900" opacity="0.9">
-          军 训
-        </text>
         <g filter="url(#cc-heat)">
-          <g transform="translate(200 0) scale(6.2) translate(-30 8)">
-            <Elder x={30} y={160} s={1} gaze={gaze} stare={stare} />
-          </g>
+          <image href={chiefLook} width="400" height="400" />
+          <image href={chiefStare} width="400" height="400" style={{ opacity: stare ? 1 : 0, transition: 'opacity 2.5s ease .6s' }} />
         </g>
-        <rect x="0" y="330" width="400" height="70" fill="#6f2b1e" />
-        <rect width="400" height="400" fill="#fff6dc" opacity="0.12" />
+        <rect width="400" height="400" fill="#fff6dc" opacity="0.08" />
       </g>
       <circle cx="200" cy="200" r="190" fill="url(#cc-edge)" />
       <circle cx="200" cy="200" r="190" fill="none" stroke="#0b0b0b" strokeWidth="8" />
