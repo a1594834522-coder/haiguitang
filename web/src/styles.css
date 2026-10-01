@@ -124,3 +124,5 @@ body {
   .grain, .tremble, .flicker-text { animation: none !important; }
   .door-panel { animation-duration: .01s !important; }
 }
+
+.intro-scroll { scrollbar-width: thin; scrollbar-color: #ffffff22 transparent; }

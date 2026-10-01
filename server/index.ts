@@ -32,7 +32,7 @@ function clientIp(c: Context): string {
   return getConnInfo(c).remote.address ?? 'unknown'
 }
 
-function fail(status: 400 | 404 | 409 | 429 | 502 | 503, message: string): never {
+function fail(status: 400 | 403 | 404 | 409 | 429 | 502 | 503, message: string): never {
   throw new HTTPException(status, { message })
 }
 
@@ -42,11 +42,14 @@ function scoreOf(s: Session) {
 }
 
 function sessionView(s: Session) {
+  const story = stories.get(s.storyId)!
   return {
     id: s.id,
     storyId: s.storyId,
     entries: s.entries,
     milestones: s.milestones,
+    // 已达成的里程碑才带上名字
+    found: story.host.milestones.filter(m => s.milestones.includes(m.id)).map(m => ({ id: m.id, label: m.label })),
     hintsUsed: s.hintsUsed,
     scoreHits: s.scoreHits,
     score: scoreOf(s),
@@ -171,6 +174,7 @@ app.post('/api/sessions/:id/hint', async c => {
 
 app.post('/api/sessions/:id/reveal', async c => {
   const { s, story } = loadSession(c)
+  if (story.host.lockReveal && s.status !== 'solved') fail(403, '这碗汤不公布答案。真相只能靠你自己问出来。')
   if (s.status === 'playing') {
     s.status = 'revealed'
     sessions.touch()

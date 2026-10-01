@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import type { SceneDef } from '../scenes'
+import { copyOf, type SceneDef } from '../scenes'
 import type { Entry, PublicStory, SessionView } from '../types'
 import { SurfaceText } from './SurfaceText'
 
@@ -22,9 +22,10 @@ type Props = {
 
 const rot = (i: number) => `${((i * 37) % 9) - 5}deg`
 
-/** 一号台的训练记录本：所有提问、回答、提示都记在这里。 */
+/** 记录本：所有提问、回答、提示都记在这里。 */
 export function Logbook(p: Props) {
   const { story, session, def, thinking } = p
+  const copy = copyOf(def)
   const [mode, setMode] = useState<Mode>('ask')
   const [text, setText] = useState('')
   const [showSurface, setShowSurface] = useState(true)
@@ -32,7 +33,7 @@ export function Logbook(p: Props) {
   const input = useRef<HTMLTextAreaElement>(null)
   const playing = session.status === 'playing'
   const hintsLeft = story.hintCount - session.hintsUsed.length
-  const found = story.milestones.filter(m => session.milestones.includes(m.id))
+  const found = session.found ?? []
 
   useEffect(() => {
     const el = scroller.current
@@ -68,9 +69,9 @@ export function Logbook(p: Props) {
       {/* 页眉 */}
       <header className="relative z-10 flex items-end justify-between gap-3 border-b border-ink/25 px-5 pb-2.5 pt-4 sm:px-7">
         <div>
-          <p className="text-[10px] tracking-[.35em] text-ink/55">训 练 记 录</p>
+          <p className="text-[10px] tracking-[.35em] text-ink/55">{copy.logbook}</p>
           <h2 className="font-hand text-xl leading-tight whitespace-nowrap text-ink sm:text-2xl">
-            <span className="hidden sm:inline">一号台 · </span>
+            {copy.titlePrefix && <span className="hidden sm:inline">{copy.titlePrefix}</span>}
             {story.title}
           </h2>
         </div>
@@ -84,13 +85,17 @@ export function Logbook(p: Props) {
             </ToolButton>
           )}
           {playing ? (
-            <ToolButton onClick={p.onReveal} danger>
-              揭晓
-            </ToolButton>
+            !story.revealLocked && (
+              <ToolButton onClick={p.onReveal} danger>
+                揭晓
+              </ToolButton>
+            )
           ) : (
-            <ToolButton onClick={p.onShowReveal} danger>
-              汤底
-            </ToolButton>
+            (session.status === 'solved' || !story.revealLocked) && (
+              <ToolButton onClick={p.onShowReveal} danger>
+                汤底
+              </ToolButton>
+            )
           )}
         </div>
       </header>
@@ -102,6 +107,9 @@ export function Logbook(p: Props) {
             <p>
               <SurfaceText text={story.surface} def={def} milestones={session.milestones} />
             </p>
+            {story.revealLocked && playing && (
+              <p className="mt-2 border-t border-ink/15 pt-2 text-[12px] leading-6 text-blood/80">这碗汤不公布答案。真相只能靠你自己问出来，还原通关后才能看到汤底。</p>
+            )}
           </section>
         )}
 
@@ -114,7 +122,7 @@ export function Logbook(p: Props) {
               </span>
             ))}
             <span className="text-ink/40">
-              {found.length}/{story.milestones.length}
+              {found.length}/{story.milestoneCount}
             </span>
           </div>
         )}
@@ -192,7 +200,7 @@ export function Logbook(p: Props) {
           </>
         ) : (
           <button onClick={p.onShowReveal} className="w-full py-3 font-hand text-2xl text-blood">
-            {session.status === 'solved' ? '你看见了那一夜 · 查看汤底' : '查看汤底'}
+            {session.status === 'solved' ? copy.solved : '查看汤底'}
           </button>
         )}
       </footer>

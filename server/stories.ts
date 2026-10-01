@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 export type QAItem = { q: string; a: string; note?: string }
@@ -29,6 +29,8 @@ export type Story = {
     hintTargets: Record<string, string>
     /** 主持人可选的即时氛围反馈（白名单），前端布景负责具体表现 */
     cues?: { id: string; desc: string }[]
+    /** 锁住答案：只有还原通关后才能看汤底，不能中途“揭晓” */
+    lockReveal?: boolean
   }
 }
 
@@ -44,7 +46,9 @@ export function publicView(s: Story) {
     hintCount: s.hints.length,
     scoringTotal: s.scoring.total,
     passScore: s.host.passScore,
-    milestones: s.host.milestones.map(m => ({ id: m.id, label: m.label })),
+    // 只给总数：里程碑的名字本身就是剧透，达成之后才随会话下发
+    milestoneCount: s.host.milestones.length,
+    revealLocked: !!s.host.lockReveal,
   }
 }
 
@@ -54,6 +58,11 @@ export function catalogView(s: Story) {
 }
 
 const STORIES_DIR = resolve(process.cwd(), 'stories')
+/**
+ * 不进 git 仓库的剧本（仓库是公开的，放进 stories/ 等于公开答案）。
+ * 本地默认读 stories-private/，线上通过 STORIES_PRIVATE_DIR 指到服务器上的目录。
+ */
+const PRIVATE_DIR = resolve(process.cwd(), process.env.STORIES_PRIVATE_DIR || 'stories-private')
 
 function validate(s: Story, file: string) {
   const need = ['id', 'title', 'surface', 'bottom', 'storyline', 'qa', 'scoring', 'host'] as const
@@ -67,11 +76,14 @@ function validate(s: Story, file: string) {
 
 function loadAll(): Map<string, Story> {
   const map = new Map<string, Story>()
-  for (const f of readdirSync(STORIES_DIR).filter(f => f.endsWith('.json')).sort()) {
-    const s = JSON.parse(readFileSync(join(STORIES_DIR, f), 'utf8')) as Story
-    validate(s, f)
-    if (map.has(s.id)) throw new Error(`${f}: 重复的 id ${s.id}`)
-    map.set(s.id, s)
+  for (const dir of [STORIES_DIR, PRIVATE_DIR]) {
+    if (!existsSync(dir)) continue
+    for (const f of readdirSync(dir).filter(f => f.endsWith('.json')).sort()) {
+      const s = JSON.parse(readFileSync(join(dir, f), 'utf8')) as Story
+      validate(s, f)
+      if (map.has(s.id)) throw new Error(`${f}: 重复的 id ${s.id}`)
+      map.set(s.id, s)
+    }
   }
   return map
 }

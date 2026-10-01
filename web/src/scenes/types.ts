@@ -43,4 +43,33 @@ export type SceneDef = {
   whisper?: string
   /** 目录页卡片上的小插画 */
   CardArt?: ComponentType
+  /** 场景整体是亮色（白天）时设为 light，界面文字改用深色 */
+  tone?: 'dark' | 'light'
+  /** 点开场按钮时的声音，默认是推开一扇老木门 */
+  enterSound?: () => void
+  /** 界面上和这碗汤有关的文案，没有则用通用文案 */
+  copy?: Partial<SceneCopy>
 }
+
+export type SceneCopy = {
+  /** 开场按钮 */
+  enter: string
+  /** 继续上次的对局 */
+  resume: string
+  /** 记录本页眉的小字 */
+  logbook: string
+  /** 记录本标题前缀（窄屏隐藏） */
+  titlePrefix: string
+  /** 通关后查看汤底的按钮 */
+  solved: string
+}
+
+export const DEFAULT_COPY: SceneCopy = {
+  enter: '开 始',
+  resume: '继 续',
+  logbook: '推 理 记 录',
+  titlePrefix: '',
+  solved: '你想通了 · 查看汤底',
+}
+
+export const copyOf = (def: SceneDef): SceneCopy => ({ ...DEFAULT_COPY, ...def.copy })

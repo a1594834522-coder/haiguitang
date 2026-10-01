@@ -17,7 +17,7 @@ export function Game({ storyId }: { storyId: string }) {
   const [session, setSession] = useState<SessionView | null>(null)
   const [mock, setMock] = useState(false)
   const [loadError, setLoadError] = useState('')
-  const [phase, setPhase] = useState<'intro' | 'play'>('intro')
+  const [phase, setPhase] = useState<'intro' | 'play'>(() => (import.meta.env.DEV && new URLSearchParams(location.search).has('skip') ? 'play' : 'intro'))
   const [thinking, setThinking] = useState(false)
   const [error, setError] = useState('')
   const [cue, setCue] = useState<{ id: string; n: number } | null>(null)
@@ -91,8 +91,8 @@ export function Game({ storyId }: { storyId: string }) {
       const r = await api.ask(session.id, q)
       setSession(r.session)
       if (r.entry.kind === 'ask' && r.entry.type === 'answer') audio.stamp()
-      if (r.newMilestones.length && story) {
-        const labels = story.milestones.filter(m => r.newMilestones.includes(m.id)).map(m => m.label)
+      if (r.newMilestones.length) {
+        const labels = r.session.found.filter(m => r.newMilestones.includes(m.id)).map(m => m.label)
         setTimeout(() => showToast(labels.join(' · ')), 500)
       }
       if (r.cue) setCue(c => ({ id: r.cue!, n: (c?.n ?? 0) + 1 }))
@@ -173,32 +173,41 @@ export function Game({ storyId }: { storyId: string }) {
 
   const clock = def.clock?.(session.questionCount)
   const paused = phase !== 'play' || revealOpen
+  // 仅开发环境：?ms=dead,voice&q=12 直接查看某个阶段的布景（生产构建里这段会被整个去掉）
+  const dbg = import.meta.env.DEV ? new URLSearchParams(location.search) : null
+  const debugMilestones = dbg?.get('ms')?.split(',').filter(Boolean)
+  const debugQ = dbg?.get('q') ? Number(dbg.get('q')) : undefined
+  // 白天的场景上，浅色字看不清
+  const light = def.tone === 'light'
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-black" onPointerDown={activity}>
       {/* 场景：桌面在记录本左侧，手机在记录本上方 */}
       <div className="absolute inset-x-0 top-0 bottom-[56dvh] lg:bottom-0 lg:right-[440px]">
-        <Scene milestones={session.milestones} questionCount={session.questionCount} thinking={thinking} idle={idle} paused={paused} cue={cue} />
+        <Scene milestones={debugMilestones ?? session.milestones} questionCount={debugQ ?? session.questionCount} thinking={thinking} idle={idle} paused={paused} cue={cue} />
 
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-4 sm:p-6">
           <div className="pointer-events-auto">
-            <button onClick={() => navigate('/')} className="text-[11px] tracking-[.3em] text-ash/60 transition hover:text-bone">
+            <button onClick={() => navigate('/')} className={`text-[11px] tracking-[.3em] transition ${light ? 'text-[#3b2a1a]/70 hover:text-[#1d130b]' : 'text-ash/60 hover:text-bone'}`}>
               ← 汤馆
             </button>
-            <h1 className="mt-1 font-hand text-3xl text-bone/90 drop-shadow-[0_2px_8px_#000] sm:text-4xl">{story.title}</h1>
-            <p className="mt-1 hidden text-[11px] tracking-wider text-ash/60 sm:block">{story.tags.join(' · ')}</p>
+            <h1 className={`mt-1 font-hand text-3xl sm:text-4xl ${light ? 'text-[#2a1a0e] drop-shadow-[0_1px_6px_rgba(255,250,235,.8)]' : 'text-bone/90 drop-shadow-[0_2px_8px_#000]'}`}>{story.title}</h1>
+            <p className={`mt-1 hidden text-[11px] tracking-wider sm:block ${light ? 'text-[#3b2a1a]/70' : 'text-ash/60'}`}>{story.tags.join(' · ')}</p>
             {mock && <p className="mt-2 inline-block border border-amber-700/50 px-1.5 text-[10px] text-amber-600/80">模拟主持人</p>}
           </div>
           <div className="pointer-events-auto flex flex-col items-end gap-2">
             <div className="flex items-center gap-3">
               {clock && (
-                <span className="font-serif text-2xl tabular-nums tracking-wider text-bone/80 drop-shadow-[0_2px_6px_#000]" title="每问一个问题，时间就过去一些">
+                <span
+                  className={`font-serif text-2xl tabular-nums tracking-wider ${light ? 'text-[#2a1a0e]/85 drop-shadow-[0_1px_6px_rgba(255,250,235,.9)]' : 'text-bone/80 drop-shadow-[0_2px_6px_#000]'}`}
+                  title="每问一个问题，时间就过去一些"
+                >
                   {clock.label}
                 </span>
               )}
               <button
                 onClick={() => audio.setMuted(!muted)}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-ash transition hover:border-white/40 hover:text-bone"
+                className={`flex h-8 w-8 items-center justify-center rounded-full border transition ${light ? 'border-[#3b2a1a]/25 text-[#3b2a1a]/80 hover:border-[#3b2a1a]/60' : 'border-white/15 text-ash hover:border-white/40 hover:text-bone'}`}
                 aria-label={muted ? '打开声音' : '关闭声音'}
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">

@@ -87,4 +87,5 @@ export const peiWoDaYiGe: SceneDef = {
     idle ? '……球……球……' : milestones.includes('help') ? '他还在里面。继续问。' : '问一个只能回答“是”或“不是”的问题',
   whisper: '“来，陪我打一个。”',
   CardArt,
+  copy: { enter: '推开训练馆的门', resume: '回到那一夜', logbook: '训 练 记 录', titlePrefix: '一号台 · ', solved: '你看见了那一夜 · 查看汤底' },
 }

@@ -13,7 +13,9 @@ export type PublicStory = CatalogItem & {
   hintCount: number
   scoringTotal: number
   passScore: number
-  milestones: { id: string; label: string }[]
+  milestoneCount: number
+  /** 答案锁住：只有还原通关后才能看汤底 */
+  revealLocked: boolean
 }
 
 export type SessionView = {
@@ -21,6 +23,8 @@ export type SessionView = {
   storyId: string
   entries: Entry[]
   milestones: string[]
+  /** 已达成的里程碑（只有达成的才有名字） */
+  found: { id: string; label: string }[]
   hintsUsed: number[]
   scoreHits: number[]
   score: number

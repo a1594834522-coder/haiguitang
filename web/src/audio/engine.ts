@@ -20,6 +20,7 @@ class AudioEngine {
   private room: { stop: () => void } | null = null
   private hum: { gain: GainNode; stop: () => void } | null = null
   private droneGain: GainNode | null = null
+  private cicadas: { level: GainNode; stop: () => void } | null = null
   private _muted = false
   private listeners = new Set<() => void>()
 
@@ -562,10 +563,119 @@ class AudioEngine {
     this.droneGain.gain.setTargetAtTime(Math.max(0.0001, level * 0.09), ctx.currentTime, 2)
   }
 
+  /** 军训的哨子：带“珠子”颤音的尖哨。long 是长哨，否则是两声短哨 */
+  whistle(v: Voice & { long?: boolean } = {}) {
+    if (!this.ctx) return
+    const ctx = this.ctx
+    const out = this.out({ wet: 0.5, vol: 0.32, ...v })
+    const blasts = v.long ? [[0, 1.1]] : [[0, 0.16], [0.24, 0.42]]
+    for (const [at, len] of blasts) {
+      const t = ctx.currentTime + 0.01 + at
+      const o = ctx.createOscillator()
+      o.frequency.value = jitter(2850, 0.03)
+      // 哨子里的小珠子打转，频率一抖一抖
+      const fm = ctx.createOscillator()
+      fm.frequency.value = jitter(36, 0.15)
+      const fmg = ctx.createGain()
+      fmg.gain.value = 170
+      fm.connect(fmg).connect(o.frequency)
+      const g = ctx.createGain()
+      g.gain.setValueAtTime(0, t)
+      g.gain.linearRampToValueAtTime(0.5, t + 0.015)
+      g.gain.setValueAtTime(0.5, t + len - 0.05)
+      g.gain.linearRampToValueAtTime(0, t + len)
+      o.connect(g).connect(out)
+      // 吹气的气声
+      const n = this.noiseSrc()
+      const bp = ctx.createBiquadFilter()
+      bp.type = 'bandpass'
+      bp.frequency.value = 3000
+      bp.Q.value = 1.5
+      const ng = ctx.createGain()
+      ng.gain.setValueAtTime(0, t)
+      ng.gain.linearRampToValueAtTime(0.08, t + 0.01)
+      ng.gain.linearRampToValueAtTime(0, t + len)
+      n.connect(bp).connect(ng).connect(out)
+      for (const s of [o, fm]) {
+        s.start(t)
+        s.stop(t + len + 0.02)
+      }
+      n.start(t, Math.random() * 1.8)
+      n.stop(t + len + 0.02)
+    }
+  }
+
+  /** 正午的蝉鸣：两群蝉，一左一右，各自一阵一阵地叫 */
+  startCicadas(level = 0.05) {
+    if (!this.ctx || this.cicadas) return
+    const ctx = this.ctx
+    const master = ctx.createGain()
+    master.gain.setValueAtTime(0.0001, ctx.currentTime)
+    master.gain.exponentialRampToValueAtTime(level, ctx.currentTime + 2.5)
+    master.connect(this.dry)
+    const nodes: AudioScheduledSourceNode[] = []
+    for (const [f, rate, pan, swell] of [
+      [4600, 118, -0.55, 0.09],
+      [5900, 152, 0.6, 0.13],
+    ] as const) {
+      const n = this.noiseSrc()
+      const bp = ctx.createBiquadFilter()
+      bp.type = 'bandpass'
+      bp.frequency.value = f
+      bp.Q.value = 4
+      // 发声膜的快速振动：方波调幅
+      const am = ctx.createGain()
+      am.gain.value = 0.5
+      const lfo = ctx.createOscillator()
+      lfo.type = 'square'
+      lfo.frequency.value = rate
+      const lfoG = ctx.createGain()
+      lfoG.gain.value = 0.5
+      lfo.connect(lfoG).connect(am.gain)
+      // 一阵强一阵弱
+      const sw = ctx.createGain()
+      sw.gain.value = 0.6
+      const slow = ctx.createOscillator()
+      slow.frequency.value = swell
+      const slowG = ctx.createGain()
+      slowG.gain.value = 0.4
+      slow.connect(slowG).connect(sw.gain)
+      const p = ctx.createStereoPanner()
+      p.pan.value = pan
+      n.connect(bp).connect(am).connect(sw).connect(p).connect(master)
+      n.start(ctx.currentTime, Math.random() * 1.8)
+      lfo.start()
+      slow.start()
+      nodes.push(n, lfo, slow)
+    }
+    this.cicadas = {
+      level: master,
+      stop: () => {
+        master.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.3)
+        nodes.forEach(s => s.stop(ctx.currentTime + 2))
+      },
+    }
+  }
+
+  /** 蝉鸣音量；0 表示突然全部停下 */
+  setCicadas(level: number, sudden = false) {
+    if (!this.ctx || !this.cicadas) return
+    const g = this.cicadas.level.gain
+    const t = this.ctx.currentTime
+    g.cancelScheduledValues(t)
+    g.setTargetAtTime(Math.max(0.0001, level), t, sudden ? 0.015 : 1.2)
+  }
+
+  stopCicadas() {
+    this.cicadas?.stop()
+    this.cicadas = null
+  }
+
   stopAll() {
     this.room?.stop()
     this.room = null
     this.stopHum()
+    this.stopCicadas()
     this.setDrone(0)
   }
 }

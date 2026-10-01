@@ -17,6 +17,8 @@ Environment=PORT=8797
 Environment=TRUST_PROXY=1
 # Cloudflare 回源最多等 100s：45s 超时 × 2 次
 Environment=LLM_MAX_RETRIES=1
+# 不进公开仓库的剧本，用 deploy/push-stories.sh 单独上传
+Environment=STORIES_PRIVATE_DIR=/opt/haiguitang/shared/stories
 # .env（LLM_API_KEY 等）由程序自己读取，系统环境变量优先
 ExecStart=/opt/haiguitang/node/bin/node node_modules/.bin/tsx server/index.ts
 Restart=always
