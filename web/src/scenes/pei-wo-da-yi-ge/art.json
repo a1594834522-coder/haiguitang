@@ -1,0 +1,112 @@
+{
+  "out": "photos",
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "style": "Photographic style for the whole scene: realistic cinematic film still, small-town China in the 1990s, night, heavy 35mm film grain, deep crushed blacks, muted desaturated colors, low light. No text, no watermark, no gore.",
+  "layers": {
+    "plate": {
+      "note": "底图：七岁的“我”站在一号台近端，第一人称。其余各层都按它的坐标对齐；重新生成它，后面所有层的区域坐标都要重新量。",
+      "prompt": "First-person POV of a seven-year-old child standing at the near end of an old ping-pong table inside a dark, old table-tennis training hall at night. The camera is low, at a small child's eye level, only a little above the table surface. The worn dark-green table stretches straight away from the camera, its white edge lines converging toward the center of the frame; a slightly sagging net crosses the middle. A single old fluorescent tube lamp hangs above the table on two chains and lights the near half of the table with a cold, slightly greenish light. The far end of the table fades into complete darkness — nothing at all can be seen beyond the net. On the right, close to the near corner of the table, stands a small old flip scoreboard on a metal stand, facing the camera, with two blank white flip cards. On the left, beside the far half of the table, there is only empty dark floor. The rest of the hall is almost black: barely visible shapes of other ping-pong tables covered with dust cloths, a closed wooden door far away on the right wall, high narrow windows on the left wall showing a dark night sky. Dust floating in the cone of light. No people and no hands in the frame. Quiet, lonely, something is wrong.",
+      "size": "1536x1024"
+    },
+    "funeral": {
+      "note": "问出“这是一场丧事”：灯管熄了，只剩长明灯；左边出现供桌和遗像，地上有纸钱。整张编辑，场景里整张渐变切换。",
+      "base": "plate",
+      "prompt": "Edit this exact image. Keep the camera position, the framing and perspective, the ping-pong table with its net, the scoreboard, the windows and the door exactly where they are. Change the lighting and add a Chinese funeral wake: the fluorescent tube above the table is now switched off — a dead grey tube, giving no light. On the left, beside the far half of the table, stands a low old wooden altar table. On it: a black-and-white framed memorial portrait of a thin old man, draped with black cloth, facing the camera; a small oil lamp with one tiny flame; a bowl of white rice with a pair of chopsticks stuck upright in it; a plate of steamed buns; a small incense burner with three burning incense sticks and thin smoke. The only light in the whole hall now is the warm, weak, flickering orange light of that oil lamp flame: it lights the altar and falls faintly across the left side of the table; everything else sinks into near-black. Round white paper funeral money is scattered on the floor around the table. Chinese rural funeral wake atmosphere, still, cold, frightening. No people."
+    },
+    "coffin": {
+      "note": "问出“一号台上的东西”：球台上架着棺材，球网没了。在 funeral 上局部重绘。球台台面约在 y 456–812。",
+      "base": "funeral",
+      "region": { "rect": [150, 330, 1236, 520] },
+      "feather": 28,
+      "prompt": "A large traditional Chinese wooden coffin now rests on top of the ping-pong table, lying lengthwise along it: its narrower foot end is close to the camera, a short distance in from the near edge of the table, and its body runs straight away from the camera; the wide, raised head end disappears into the darkness beyond the middle of the table. The net is gone. The coffin is thick, old, lacquered deep black-red, with a heavy lid that is closed but not yet nailed shut. Faint gold patterns on the foot end. Some of the worn green table surface and its white edge lines are still visible around the base of the coffin. The warm, weak orange light of the oil lamp on the altar at the left glints faintly along the left side of the lacquered coffin; the rest of it is almost black. Still, heavy, frightening. No people."
+    },
+    "door": {
+      "note": "半夜两点爸爸开门看了一眼；问出“乖，别停”后门一直开着。叠加层：在 funeral 上局部重绘右墙的双开门（x≈1385 起，y 153–440），裁出这一块，开灯和熄灯状态都叠在上面。区域不能碰到下面的记分牌（y≈427 起）。",
+      "base": "funeral",
+      "region": { "rect": [1372, 120, 164, 308] },
+      "feather": 16,
+      "output": "overlay",
+      "crop": [1340, 90, 196, 370],
+      "prompt": "Keep the old wooden double door on the right wall exactly where it is, with the same frame, size and position. Only its right-hand leaf is now pushed open a little, leaving a narrow vertical gap between the two leaves. Dim, warm yellow light from the room behind leaks out through that gap. In the gap stands the dark silhouette of a grown man, motionless, half hidden behind the door leaf, watching. His face cannot be seen. Everything around the door stays as dark as it is."
+    },
+    "dawn": {
+      "note": "天快亮：左上高窗里的夜空慢慢变成黎明前的灰蓝。叠加层，透明度随时间增加。",
+      "base": "funeral",
+      "region": { "rect": [0, 0, 345, 312] },
+      "feather": 24,
+      "output": "overlay",
+      "crop": [0, 0, 380, 345],
+      "prompt": "The night sky in the high windows has turned the cold, pale grey-blue of the hour before dawn; the silhouettes of the trees outside are now visible against it. A faint cold bluish light comes in through the windows onto the wall around them. Keep the window frames and the wall exactly where they are."
+    },
+    "cycle": {
+      "note": "问出“轮回”：多年以后，棺材右侧的暗处站着另一个孩子。叠加层，在 coffin 上局部重绘。",
+      "base": "coffin",
+      "region": { "rect": [1170, 290, 180, 350] },
+      "feather": 20,
+      "output": "overlay",
+      "crop": [1140, 260, 240, 410],
+      "prompt": "In the deep shadow at the right side, about halfway along, stands a short, slight figure — only about as tall as the table — completely still, its back half turned to us. It is almost only a dark silhouette, faintly rimmed by the distant warm lamp light. In one hand, hanging down at its side, an old ping-pong paddle with red rubber. No face visible."
+    },
+    "hand": {
+      "note": "“我”握拍的右手，透明图层，场景里用 CSS 做挥拍。熄灯后用滤镜调成烛光的颜色。",
+      "transparent": true,
+      "size": "1024x1024",
+      "refs": ["plate"],
+      "prompt": "First-person view: a seven-year-old child's own right hand and forearm entering from the bottom-right edge of the frame, holding an old, worn table-tennis paddle in a shakehand grip. The paddle has red rubber worn pale at the edges and a wooden handle wrapped in many layers of old cloth tape. The blade points up and slightly forward. Lit from above by cold fluorescent light, as in the reference image. Isolated on a fully transparent background: no table, no floor, no background at all, only the hand, forearm and paddle.",
+      "fit": [966, 644]
+    },
+    "portrait": {
+      "note": "遗像特写：正视。",
+      "refs": ["funeral"],
+      "size": "1024x1536",
+      "fit": [640, 960],
+      "prompt": "Close-up photograph of the memorial portrait standing on the funeral altar in the reference image: a black-and-white studio photograph of the same thin, stern old Chinese man in his seventies, short grey hair, gaunt face, lips pressed tight, wearing a dark Mao-style jacket, looking straight into the camera. The photo is in a dark wooden frame behind glass, with a black cloth draped over the top of the frame and a black silk flower tied at the top. Warm, weak orange light from an oil lamp below at the left glints on the glass; the background is black. Realistic, still, unsettling. Portrait orientation."
+    },
+    "portrait-door": {
+      "note": "问出“乖，别停”后：照片里的爷爷眼睛转向画面右边（休息室的门）。",
+      "base": "portrait",
+      "fit": [640, 960],
+      "prompt": "Edit this exact image and keep everything else identical — the frame, the cloth, the flower, the lighting, the old man's face and pose. Change only his eyes: he is no longer looking at the camera; his eyes have turned sharply toward the right side of the image, as if staring at something off to the side."
+    },
+    "portrait-closed": {
+      "note": "问出“爷爷还活着”后盯着遗像看久了：眨一下眼。和 portrait 交叉渐变。",
+      "base": "portrait",
+      "fit": [640, 960],
+      "prompt": "Edit this exact image and keep everything else identical — the frame, the cloth, the flower, the lighting, the old man's face and pose. Change only his eyes: they are closed."
+    },
+    "paddle": {
+      "note": "球拍特写。",
+      "refs": ["hand"],
+      "size": "1024x1024",
+      "fit": [800, 800],
+      "prompt": "Close-up photograph of the same old table-tennis paddle as in the reference image, lying on a dark surface: red rubber worn pale and smooth at the edges, a wooden handle wrapped in many layers of old, greyish cloth tape, small chips in the wood at the rim. Weak warm light from the side, deep shadows, black background. Shallow depth of field. Square 1:1."
+    },
+    "paddle-stained": {
+      "note": "问出“那不是打球”后：球拍边上沾了一点一点的红漆（敲棺盖蹭的）。",
+      "base": "paddle",
+      "fit": [800, 800],
+      "prompt": "Edit this exact image and keep everything else identical. Add only tiny chips and specks of dark red-black lacquer paint stuck along the wooden rim of the paddle and on the edge of the rubber, as if it had been knocked against a lacquered wooden surface many, many times."
+    },
+    "scoreboard": {
+      "note": "记分牌特写。两张翻牌是空白的，数字由代码叠上去。",
+      "refs": ["plate"],
+      "size": "1024x1024",
+      "fit": [800, 800],
+      "prompt": "Close-up photograph, straight on, of the same small old flip scoreboard on a metal stand as in the reference image: a dark green painted wooden board with two large blank white flip cards side by side, hanging from metal rings at the top, worn and dirty at the edges. Completely blank cards, no numbers, no letters. Weak light, the background falls into darkness. Square 1:1."
+    },
+    "door-closed": {
+      "note": "门的特写：休息室的门关着，门口歪歪扭扭摆着几双大人的鞋。",
+      "refs": ["funeral"],
+      "size": "1024x1024",
+      "fit": [800, 800],
+      "prompt": "Close-up photograph at a small child's eye level of the same old wooden door on the dark wall of the training hall in the reference image, closed. In front of it on the concrete floor, several pairs of adults' shoes are left askew: worn leather shoes, cloth shoes, a pair of plastic slippers. A thin line of dim yellow light shows under the door. Very dark, the only other light is a faint warm glow from the left. No text, no signs. Square 1:1."
+    },
+    "door-ajar": {
+      "note": "问出“乖，别停”后：门开着一条缝，里面有人站着。",
+      "base": "door-closed",
+      "fit": [800, 800],
+      "prompt": "Edit this exact image and keep everything else identical — the wall, the shoes, the lighting outside. Change only the door: it now stands open a narrow crack, dim yellow light inside, and in the dark gap you can just make out part of a grown man standing very still right behind the door, watching. His face cannot be seen."
+    }
+  }
+}

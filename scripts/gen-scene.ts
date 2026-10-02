@@ -231,6 +231,10 @@ async function render(name: string, variant?: number) {
   let prompt = layer.prompt.trim()
   if (cfg.style) prompt += `\n\n${cfg.style.trim()}`
 
+  if (dry) {
+    const missing = [layer.base, ...(layer.refs ?? [])].filter((r): r is string => !!r && !existsSync(sourceOf(r)))
+    if (missing.length) return console.log(`[${tag}] 依赖 ${missing.join('、')} 还没生成，跳过预览`)
+  }
   const base = layer.base ? await sharp(sourceOf(layer.base)).removeAlpha().png().toBuffer() : null
   const meta = base ? await sharp(base).metadata() : null
   const W = meta?.width ?? 0
@@ -341,20 +345,29 @@ if (!wanted.size) {
 console.log(`要生成：${[...wanted].join('、')}`)
 
 const done = new Set<string>()
+const failedLayers = new Set<string>()
 const running = new Map<string, Promise<void>>()
 const LIMIT = 3
-let failed = false
 
-while (done.size < wanted.size && !failed) {
+/** 某一层失败了，依赖它的层跳过，其余照常生成 */
+const blocked = (name: string): boolean => deps(name).some(d => failedLayers.has(d) || (wanted.has(d) && blocked(d)))
+
+while (done.size < wanted.size) {
   for (const name of wanted) {
     if (done.has(name) || running.has(name) || running.size >= LIMIT) continue
+    if (blocked(name)) {
+      console.warn(`[${name}] 依赖的层失败了，跳过`)
+      failedLayers.add(name)
+      done.add(name)
+      continue
+    }
     if (deps(name).some(d => wanted.has(d) && !done.has(d))) continue
     const job = (async () => {
       if (variants > 1 && only.includes(name)) await Promise.all(Array.from({ length: variants }, (_, i) => render(name, i + 1)))
       else await render(name)
     })()
       .catch(e => {
-        failed = true
+        failedLayers.add(name)
         console.error((e as Error).message)
       })
       .finally(() => {
@@ -367,5 +380,8 @@ while (done.size < wanted.size && !failed) {
   await Promise.race(running.values())
 }
 await Promise.all(running.values())
-if (failed) process.exit(1)
+if (failedLayers.size) {
+  console.error(`没生成成功：${[...failedLayers].join('、')}`)
+  process.exit(1)
+}
 console.log(`完成。原始输出和母版在 ${relative('.', cacheDir)}/`)
