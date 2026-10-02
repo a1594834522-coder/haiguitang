@@ -16,13 +16,13 @@
       "prompt": "Edit this exact image and keep everything else identical. Add a young Chinese female university freshman standing at attention very close in front of the camera, about one step away, seen directly from behind: camouflage military-training uniform and camouflage cap, a short low ponytail coming out under the cap, the back of her neck glistening with sweat, a dark sweat patch on her back. She is slightly left of center, her head at about the height of the reviewing stand's roof, her body cut off at the waist by the bottom edge of the frame. She may block the left part of the stand, but the old instructor at the lectern must remain visible. No shadow of the viewer on the grass."
     },
     "line": {
-      "note": "角落里那一排。只改右边远处这一块，贴回底图后裁出 LINE_CROP（Scene.tsx）。",
+      "note": "角落里那一排。只改主席台右边、围栏前那一条，贴回底图后裁出 LINE_CROP（Scene.tsx）。主席台右边缘在 x≈1189，围栏和跑道之间的窄草地在 y 540–557。模型按自己的透视画人（约 50px 高），不太受蒙版大小控制；蒙版太矮会把头切掉，所以区域留够 53px。",
       "base": "plate",
-      "region": { "rect": [1150, 470, 298, 120] },
-      "pad": 40,
-      "feather": 14,
+      "region": { "rect": [1192, 505, 256, 53] },
+      "pad": 3,
+      "feather": 5,
       "crop": [1120, 450, 328, 170],
-      "prompt": "In the far right part of the field, near the fence beyond the running track, add a long single row of about forty small, distant figures standing at attention in a straight line, facing the reviewing stand. The figures at the left end of the row wear the same modern digital camouflage as the seated students; toward the right end the uniforms become older and more faded, and the figures at the far right end wear faded plain olive-green 1980s uniforms. They look pale and slightly washed out in the heat haze, perfectly still."
+      "prompt": "To the right of the reviewing stand, on the narrow strip of pale grass between the chain-link fence and the running track, add one long single row of about twenty small, distant people standing at attention in a perfectly straight line, packed tightly shoulder to shoulder with no gaps between them. Each person fills the masked strip from the top of the head to the feet: heads at the top edge of the mask, feet on the grass strip at its bottom edge. The first person stands a short step to the right of the corner of the reviewing stand, not overlapping it; the row runs on past the right edge of the frame. They face the reviewing stand, so we see them mostly from the side, turned toward the left of the frame. The people at the left end of the row wear the same modern digital camouflage as the seated students; further right the uniforms become older and more faded, and the people at the far right wear faded plain olive-green 1980s uniforms. They look pale and slightly washed out in the heat haze, perfectly still. Keep the fence, its posts, the trees behind it and the running track exactly as they are."
     },
     "turn": {
       "note": "向右看齐：“我”把头转向右边，视线顺着那一排看过去。",

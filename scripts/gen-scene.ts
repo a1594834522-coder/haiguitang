@@ -5,9 +5,10 @@
  *   npm run gen -- web/src/scenes/xiang-you-kan-qi girl line  只（重新）生成这几层
  *   npm run gen -- <场景目录> girl --dry                       不调接口，只画出蒙版预览
  *   npm run gen -- <场景目录> girl --n 3                       出 3 个候选放进缓存目录，不覆盖正式文件
+ *   npm run gen -- <场景目录> girl --pick 2                    把第 2 个候选定为正式文件
  *   npm run gen -- <场景目录> line --reuse                     不调接口，用上次的原始输出重新贴回、裁切（调参数用）
  *
- * 接口地址和密钥从 .env 读取：IMAGE_API_BASE、IMAGE_API_KEY。
+ * 接口地址和密钥从 .env 读取：IMAGE_API_BASE、IMAGE_API_KEY；同时请求数 IMAGE_API_CONCURRENCY（默认 2）。
  *
  * 模型只把蒙版当参考，蒙版外的像素也会被轻微重画。所以局部重绘之后，
  * 只把区域里那一块羽化贴回底图，其余像素保持原样，各状态图之间严格对齐。
@@ -27,7 +28,7 @@ type Layer = {
   refs?: string[]
   /** 只改这一块；改完贴回 base，区域外一个像素都不动 */
   region?: Region
-  /** 发给模型的蒙版比区域大多少像素，给模型留出余地（默认 32） */
+  /** 蒙版和贴回范围都比区域外扩多少像素（默认 0）。模型会把内容画满蒙版，所以区域就按想要的物体大小来画 */
   pad?: number
   /** 贴回时的羽化宽度（默认 16） */
   feather?: number
@@ -69,7 +70,7 @@ const opt = (name: string) => {
   const i = argv.indexOf(`--${name}`)
   return i >= 0 ? argv[i + 1] : undefined
 }
-const positional = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--n')
+const positional = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--n' && argv[i - 1] !== '--pick')
 const [sceneArg, ...only] = positional
 if (!sceneArg) {
   console.error('用法：npm run gen -- <场景目录> [层名...] [--dry] [--n 3]')
@@ -154,14 +155,29 @@ async function apiMask(r: Region, W: number, H: number, pad: number) {
 
 class RetryableError extends Error {}
 
-/** 代理偶尔会返回上游错误，重试两次 */
+/** 代理的账号池并发有限，太多同时请求会被拒（503 或奇怪的上游 400），所以全局限流 */
+const API_CONCURRENCY = Number(process.env.IMAGE_API_CONCURRENCY ?? 2)
+let inFlight = 0
+const waiting: (() => void)[] = []
+async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
+  while (inFlight >= API_CONCURRENCY) await new Promise<void>(r => waiting.push(r))
+  inFlight++
+  try {
+    return await fn()
+  } finally {
+    inFlight--
+    waiting.shift()?.()
+  }
+}
+
+/** 代理偶尔会返回上游错误或并发已满，最多重试四次 */
 async function callApi(name: string, layer: Layer, prompt: string, images: Buffer[], mask?: Buffer): Promise<Buffer> {
   for (let attempt = 1; ; attempt++) {
     try {
-      return await callApiOnce(name, layer, prompt, images, mask)
+      return await withSlot(() => callApiOnce(name, layer, prompt, images, mask))
     } catch (e) {
       const retryable = e instanceof RetryableError || (e as Error).name === 'TimeoutError'
-      if (!retryable || attempt >= 3) throw e
+      if (!retryable || attempt >= 5) throw e
       console.warn(`${(e as Error).message}\n[${name}] 第 ${attempt} 次失败，${attempt * 10} 秒后重试…`)
       await new Promise(r => setTimeout(r, attempt * 10_000))
     }
@@ -224,7 +240,8 @@ async function render(name: string, variant?: number) {
   if (layer.region) prompt += '\n\nOnly change the transparent masked area. Keep everything outside it exactly as in the input photo: same framing, perspective, lighting and grain.'
   const refs = await Promise.all((layer.refs ?? []).map(r => sharp(sourceOf(r)).png().toBuffer()))
   const mode = layer.region ? '局部重绘' : base ? '整张编辑' : refs.length ? `照参考图生成（${refs.length} 张）` : '从零生成'
-  const mask = layer.region ? await apiMask(layer.region, W, H, layer.pad ?? 32) : undefined
+  const pad = layer.pad ?? 0
+  const mask = layer.region ? await apiMask(layer.region, W, H, pad) : undefined
 
   if (dry) {
     if (base && layer.region) {
@@ -258,7 +275,7 @@ async function render(name: string, variant?: number) {
   let result = await img.ensureAlpha().png().toBuffer()
 
   if (base && layer.region) {
-    const a = await regionAlpha(layer.region, W, H, 0, layer.feather ?? 16)
+    const a = await regionAlpha(layer.region, W, H, pad, layer.feather ?? 16)
     // 先单独去掉透明通道再接上羽化蒙版：sharp 按固定顺序执行，写在一条链里 removeAlpha 会把刚接上的通道删掉
     const rgb = await sharp(result).removeAlpha().raw().toBuffer()
     const patch = await sharp(rgb, { raw: { width: W, height: H, channels: 3 } })
@@ -280,12 +297,29 @@ async function render(name: string, variant?: number) {
     console.log(`[${tag}] 候选 → ${relative('.', p)}（${secs}s）`)
     return
   }
-  writeFileSync(masterFile(name), result)
+  await publish(name, result)
+  console.log(`[${tag}] → ${relative('.', outFile(name))}（${secs}s）`)
+}
+
+/** 写母版和正式文件 */
+async function publish(name: string, png: Buffer) {
+  writeFileSync(masterFile(name), png)
   const file = outFile(name)
-  const q = layer.webp ?? 82
-  if (extname(file) === '.webp') await sharp(result).webp({ quality: q, alphaQuality: 90 }).toFile(file)
-  else await sharp(result).toFile(file)
-  console.log(`[${tag}] → ${relative('.', file)}（${secs}s）`)
+  const q = cfg.layers[name].webp ?? 82
+  if (extname(file) === '.webp') await sharp(png).webp({ quality: q, alphaQuality: 90 }).toFile(file)
+  else await sharp(png).toFile(file)
+}
+
+const pick = opt('pick')
+if (pick) {
+  if (!only.length) fail('--pick 要写明层名')
+  for (const name of only) {
+    const p = join(cacheDir, `${name}.v${pick}.png`)
+    if (!existsSync(p)) fail(`没有候选 ${relative('.', p)}`)
+    await publish(name, readFileSync(p))
+    console.log(`[${name}] 用第 ${pick} 个候选 → ${relative('.', outFile(name))}`)
+  }
+  process.exit(0)
 }
 
 // ---------- 调度：先生成被依赖的层，互不依赖的并行跑 ----------
