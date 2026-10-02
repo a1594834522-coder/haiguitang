@@ -1,0 +1,55 @@
+{
+  "out": "photos",
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "style": "Photographic style for the whole scene: realistic photo, harsh overhead noon sun, overexposed, bleached, sun-damaged faded colors like an old Kodak print, heat shimmer, fine film grain, eerie stillness. No text, no watermark, no gore.",
+  "layers": {
+    "plate": {
+      "note": "底图。其余各层都按它的坐标对齐；重新生成它，line 的区域坐标和场景里的可点区域都要重新调。",
+      "prompt": "First-person POV photograph from a university freshman standing at attention during Chinese military training, noon. The blurred dark-green camouflage brim of the viewer's own cap cuts across the top edge of the frame. Directly ahead across an empty sunlit grass field and a red running track stands a concrete reviewing stand with a red banner and a lectern; a small, rigid, white-haired old instructor in an olive uniform stands at the lectern facing the viewer. On the left, under big dark trees in deep shade, a whole company of freshmen in camouflage sit cross-legged in rows, small and indistinct; one instructor at the edge of the shade raises his hand, beckoning. The far right of the field is empty. One small, worn old military canteen in a faded camouflage cloth cover lies on the grass in the lower-right corner. No shadow of the viewer on the grass. 4:3 landscape.",
+      "size": "1536x1024",
+      "fit": [1448, 1086]
+    },
+    "girl": {
+      "note": "问出“换你了”后：视角退后一排，眼前就是女生的背影。整张编辑，场景里整张渐变切换。",
+      "base": "plate",
+      "prompt": "Edit this exact image and keep everything else identical. Add a young Chinese female university freshman standing at attention very close in front of the camera, about one step away, seen directly from behind: camouflage military-training uniform and camouflage cap, a short low ponytail coming out under the cap, the back of her neck glistening with sweat, a dark sweat patch on her back. She is slightly left of center, her head at about the height of the reviewing stand's roof, her body cut off at the waist by the bottom edge of the frame. She may block the left part of the stand, but the old instructor at the lectern must remain visible. No shadow of the viewer on the grass."
+    },
+    "line": {
+      "note": "角落里那一排。只改右边远处这一块，贴回底图后裁出 LINE_CROP（Scene.tsx）。",
+      "base": "plate",
+      "region": { "rect": [1150, 470, 298, 120] },
+      "pad": 40,
+      "feather": 14,
+      "crop": [1120, 450, 328, 170],
+      "prompt": "In the far right part of the field, near the fence beyond the running track, add a long single row of about forty small, distant figures standing at attention in a straight line, facing the reviewing stand. The figures at the left end of the row wear the same modern digital camouflage as the seated students; toward the right end the uniforms become older and more faded, and the figures at the far right end wear faded plain olive-green 1980s uniforms. They look pale and slightly washed out in the heat haze, perfectly still."
+    },
+    "turn": {
+      "note": "向右看齐：“我”把头转向右边，视线顺着那一排看过去。",
+      "refs": ["plate", "girl"],
+      "prompt": "Same place, same moment and same photographic style as the first reference image: first-person view, the blurred camouflage cap brim across the top edge.\n\nThe viewer has turned their head 90 degrees to their RIGHT, so we are now looking straight along a long single row of people standing at attention in the far corner of the sports field. The reviewing stand is now off to the LEFT, at most a corner of it visible at the left edge of the frame.\n\nThe row begins right next to the camera and recedes straight away from us into the distance, toward a vanishing point slightly left of center. The nearest person stands very close, filling the right third of the frame. His body is in profile, facing the LEFT edge of the frame (toward the reviewing stand), arms straight at his sides, but his head is turned away from us, toward the far end of the row, so we see only the back of his head and his ear — never his face.\n\nEveryone further down the row stands the same way: body facing frame-left, head turned away from the camera toward the far end. The nearest person and the next few wear the same modern Chinese digital-pattern camouflage training uniform and cap as the girl in the second reference image, faded and sweat-stained; further down the row the uniforms gradually become older — first woodland camouflage, then plain olive green — and the farthest people wear very faded plain olive-green 1980s uniforms. Only the very last person at the far end has not turned his head: he faces frame-left, toward the reviewing stand.\n\nDo not mirror or flip the composition. 4:3 landscape.",
+      "size": "1536x1024",
+      "fit": [1448, 1086]
+    },
+    "chief-look": {
+      "note": "点主席台的特写：老人一直盯着操场右边的角落。",
+      "refs": ["plate"],
+      "prompt": "Telephoto close-up photograph, as if seen through binoculars from the middle of a sunlit sports field at noon: the same very old Chinese military-training chief instructor as on the reviewing stand in the reference image, standing at a brown wooden lectern. He is about seventy, with short, completely white hair and no cap, a deeply lined, sun-darkened, gaunt face, standing rigidly straight in an old-style olive-green uniform with red collar tabs, both hands resting on the lectern, a microphone in front of him. Behind him, out of focus, the lower edge of a red banner and a grey concrete wall. His eyes are not on the field in front of him: he stares fixedly toward the right side of the frame, toward a far corner of the field, grim and wary, as if watching something standing there. Shallow depth of field. Square 1:1.",
+      "size": "1024x1024",
+      "fit": [800, 800]
+    },
+    "chief-stare": {
+      "note": "问出“主席台上的人”之后：同一张特写，他转过来直直盯着镜头。和 chief-look 交叉渐变，所以要尽量逐像素一致。",
+      "base": "chief-look",
+      "prompt": "Edit this exact image and keep everything else identical — same framing, pose, lighting, background and focus. Change only his gaze: he has slowly turned his eyes and face a little toward the camera and now stares directly into the lens, cold and unblinking, as if he has noticed the viewer.",
+      "fit": [800, 800]
+    },
+    "canteen": {
+      "note": "点地上水壶的特写。",
+      "refs": ["plate"],
+      "prompt": "Close-up photograph of an old Chinese military canteen lying on its side on sun-scorched grass at noon: a dented aluminum water bottle in a faded, frayed digital-camouflage cloth cover with a worn webbing strap, the same canteen as in the lower-right corner of the reference image. The cloth cover is bleached by years of sun, stained and coming apart at one seam. Shallow depth of field. No people. Square 1:1.",
+      "size": "1024x1024",
+      "fit": [800, 800]
+    }
+  }
+}
