@@ -28,6 +28,9 @@ jobs:
       - name: 安装依赖
         run: npm ci --no-audit --no-fund
 
+      - name: 剧本校验
+        run: npm run check:stories
+
       - name: 类型检查 + 构建
         run: npm run build
 

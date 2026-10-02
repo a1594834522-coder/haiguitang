@@ -1,0 +1,33 @@
+name: check
+
+# PR 上只做检查，不碰任何 secrets，也不发版
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci --no-audit --no-fund
+
+      - name: 剧本校验
+        run: npm run check:stories
+
+      - name: 类型检查 + 构建
+        run: npm run build

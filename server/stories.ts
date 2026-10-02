@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { checkStory } from './storyCheck.ts'
 
 export type QAItem = { q: string; a: string; note?: string }
 export type Milestone = { id: string; label: string; desc: string; keywords?: string[] }
@@ -83,16 +84,9 @@ const STORIES_DIR = resolve(process.cwd(), 'stories')
 const PRIVATE_DIR = resolve(process.cwd(), process.env.STORIES_PRIVATE_DIR || 'stories-private')
 
 function validate(s: Story, file: string) {
-  const need = ['id', 'title', 'surface', 'bottom', 'storyline', 'qa', 'scoring', 'host'] as const
-  for (const k of need) if (!(k in s)) throw new Error(`${file}: 缺少字段 ${k}`)
-  if (!/^[a-z0-9-]+$/.test(s.id)) throw new Error(`${file}: id 只能包含小写字母、数字和连字符`)
-  const ids = new Set(s.host.milestones.map(m => m.id))
-  for (const [lvl, target] of Object.entries(s.host.hintTargets ?? {})) {
-    if (!ids.has(target)) throw new Error(`${file}: hintTargets.${lvl} 指向不存在的里程碑 ${target}`)
-  }
-  s.scoring.items.forEach((it, i) => {
-    for (const m of it.milestones ?? []) if (!ids.has(m)) throw new Error(`${file}: scoring.items[${i}].milestones 指向不存在的里程碑 ${m}`)
-  })
+  const { errors, warnings } = checkStory(s, file)
+  for (const w of warnings) console.warn(`[stories] ${file}: ${w}`)
+  if (errors.length) throw new Error(`${file} 校验没通过（npm run check:stories 可以看到全部问题）：\n  ${errors.join('\n  ')}`)
 }
 
 function loadAll(): Map<string, Story> {
