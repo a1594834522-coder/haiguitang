@@ -1,0 +1,131 @@
+/* ---------- 首页 ---------- */
+
+/* 手电筒：整页压暗，只有鼠标附近亮。没有鼠标时是一束从上方斜照下来的固定光 */
+.lb-torch {
+  position: fixed; inset: 0; z-index: 20; pointer-events: none;
+  background: radial-gradient(ellipse 70vmax 55vmax at 50% 18%, transparent 0, rgba(0, 0, 0, .25) 60%, rgba(0, 0, 0, .5) 100%);
+}
+.lb-torch-on .lb-torch {
+  background: radial-gradient(circle 440px at var(--mx, 50%) var(--my, 30%), transparent 0, rgba(0, 0, 0, .12) 45%, rgba(0, 0, 0, .45) 100%);
+  animation: lb-torch-flicker 9s steps(1) infinite;
+}
+/* 手电接触不良：偶尔暗一下 */
+@keyframes lb-torch-flicker { 0%, 100% { opacity: 1 } 62% { opacity: 1.15 } 62.6% { opacity: 1 } 88% { opacity: 1.25 } 88.4% { opacity: 1 } 88.9% { opacity: 1.2 } 89.2% { opacity: 1 } }
+
+/* 标题：慢慢渗出来；偶尔错位一下，像信号不稳 */
+.lb-title {
+  position: relative; display: inline-block; letter-spacing: .04em;
+  text-shadow: 0 0 40px rgba(140, 20, 10, .45), 0 0 2px rgba(80, 0, 0, .8);
+  animation: lb-bleed 3.2s cubic-bezier(.2, .7, .2, 1) both;
+}
+@keyframes lb-bleed { from { opacity: 0; filter: blur(14px); letter-spacing: .3em } to { opacity: 1; filter: none; letter-spacing: .04em } }
+.lb-title::before, .lb-title::after {
+  content: attr(data-text); position: absolute; inset: 0; pointer-events: none; opacity: 0;
+}
+.lb-title::before { color: #d9d2c3; mix-blend-mode: screen; animation: lb-glitch-a 11s steps(1) 4s infinite; }
+.lb-title::after { color: #3a0000; animation: lb-glitch-b 11s steps(1) 4s infinite; }
+@keyframes lb-glitch-a {
+  0%, 100% { opacity: 0 } 71% { opacity: .35; transform: translate(-5px, 1px); clip-path: inset(18% 0 58% 0) }
+  71.6% { opacity: .25; transform: translate(4px, -1px); clip-path: inset(62% 0 12% 0) } 72.2% { opacity: 0 }
+}
+@keyframes lb-glitch-b {
+  0%, 100% { opacity: 0 } 71.2% { opacity: .9; transform: translate(6px, 0); clip-path: inset(40% 0 30% 0) } 71.9% { opacity: 0 }
+}
+
+.lb-seal { transform: rotate(8deg); opacity: 0; animation: lb-seal .5s cubic-bezier(.2, 1.6, .4, 1) 2.4s forwards; filter: drop-shadow(0 0 12px rgba(160, 30, 20, .35)); }
+@keyframes lb-seal { from { opacity: 0; transform: scale(2.2) rotate(14deg); filter: blur(3px) } to { opacity: .92; transform: rotate(8deg) } }
+
+/* 主持人的五种回答，盖成小印 */
+.lb-answer {
+  font-family: var(--font-hand); font-size: 15px; line-height: 1; color: #b23a2c;
+  padding: .45em .6em .38em; border: 1.5px solid currentColor; border-radius: 3px;
+  transform: rotate(var(--r)); opacity: .75;
+}
+.lb-answer:nth-child(2) { color: #8a8273; }
+.lb-answer:nth-child(n + 4) { color: #6e675b; border-style: dashed; }
+
+/* 往下看的引导线：一滴往下流 */
+.lb-cue-line { position: relative; width: 1px; height: 64px; background: linear-gradient(to bottom, rgba(217, 210, 195, .25), transparent); overflow: hidden; }
+.lb-cue-line::after { content: ''; position: absolute; left: -1px; top: -12px; width: 3px; height: 12px; border-radius: 2px; background: #8e1b17; animation: lb-drip 2.8s cubic-bezier(.6, 0, .9, .6) infinite; }
+@keyframes lb-drip { 0% { transform: translateY(0); opacity: 0 } 15% { opacity: 1 } 100% { transform: translateY(80px); opacity: 0 } }
+
+/* ---------- 汤单 ---------- */
+.lb-item { cursor: pointer; outline: none; }
+.lb-cover {
+  /* 四边羽化，图从中间往外慢慢沉进黑暗里，没有硬边 */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 24%, #000 76%, transparent), linear-gradient(to bottom, transparent, #000 22%, #000 72%, transparent);
+  -webkit-mask-composite: source-in;
+          mask-image: linear-gradient(to right, transparent, #000 24%, #000 76%, transparent), linear-gradient(to bottom, transparent, #000 22%, #000 72%, transparent);
+          mask-composite: intersect;
+}
+.lb-cover img { filter: grayscale(.7) brightness(.8) contrast(1.1); transform: scale(1.02); transition: filter 1.6s ease, transform 2.4s cubic-bezier(.2, .7, .2, 1); }
+.lb-cover-glow { opacity: 0; background: radial-gradient(ellipse at 50% 60%, color-mix(in srgb, var(--accent) 35%, transparent), transparent 70%); mix-blend-mode: screen; transition: opacity 1.2s ease; z-index: 1; }
+.lb-item:hover .lb-cover img, .lb-item:focus-visible .lb-cover img { filter: grayscale(0) brightness(.9) contrast(1.05); transform: scale(1.06); }
+.lb-item:hover .lb-cover-glow, .lb-item:focus-visible .lb-cover-glow { opacity: 1; }
+.lb-item:focus-visible .lb-name { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 10px; }
+
+.lb-name { position: relative; display: inline-block; transition: color .8s, text-shadow .8s; }
+.lb-item:hover .lb-name { color: #efe6d4; text-shadow: 0 0 24px color-mix(in srgb, var(--accent) 60%, transparent); }
+.lb-name::after { content: attr(data-text); position: absolute; inset: 0; color: var(--accent); opacity: 0; pointer-events: none; }
+.lb-item:hover .lb-name::after { animation: lb-name-glitch .5s steps(1) 1; }
+@keyframes lb-name-glitch { 0% { opacity: .8; transform: translate(4px, 0); clip-path: inset(30% 0 40% 0) } 30% { opacity: .6; transform: translate(-3px, 0); clip-path: inset(65% 0 5% 0) } 60%, 100% { opacity: 0 } }
+.lb-enter { transition: letter-spacing .8s ease; }
+.lb-item:hover .lb-enter { letter-spacing: .55em; }
+
+/* 触屏：没有悬停，封面直接保留一点颜色 */
+@media (hover: none) {
+  .lb-cover img { filter: grayscale(.3) brightness(.85) contrast(1.05); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-title, .lb-title::before, .lb-title::after, .lb-seal, .lb-cue-line::after, .lb-torch-on .lb-torch { animation: none !important; }
+  .lb-seal { opacity: .92; }
+}
+
+/* ---------- 悬停与按压反馈 ---------- */
+
+/* 标题：鼠标碰到就闪一下 */
+.lb-title { cursor: default; }
+.lb-jolt { animation: lb-shake .3s steps(3) 1; }
+.lb-jolt .lb-title::before { animation: lb-glitch-a .45s steps(1) -.32s 1; }
+.lb-jolt .lb-title::after { animation: lb-glitch-b .45s steps(1) -.32s 1; }
+@keyframes lb-shake { 0% { transform: translate(2px, -1px) } 33% { transform: translate(-3px, 1px) } 66% { transform: translate(1px, 0) } 100% { transform: none } }
+
+/* 红印：像被重新按了一下 */
+.lb-seal { transition: transform .25s cubic-bezier(.2, 1.6, .4, 1), filter .4s; }
+.lb-seal:hover { transform: rotate(2deg) scale(.9); filter: drop-shadow(0 0 18px rgba(200, 40, 25, .6)); }
+
+/* 答案小印：按下去，墨色变深，下面的说明跟着换 */
+.lb-answer { cursor: help; transition: transform .2s cubic-bezier(.2, 1.6, .4, 1), opacity .3s, color .3s, box-shadow .3s, background .3s; }
+.lb-answer:hover, .lb-answer-on { opacity: 1; transform: rotate(0) scale(.94); color: #d4493a; background: rgba(142, 27, 23, .12); box-shadow: 0 0 18px rgba(160, 30, 20, .25); }
+.lb-answer:nth-child(2):hover, .lb-answer-on:nth-child(2) { color: #d9d2c3; background: rgba(217, 210, 195, .06); box-shadow: 0 0 14px rgba(217, 210, 195, .12); }
+.lb-answer:nth-child(n + 4):hover, .lb-answer-on:nth-child(n + 4) { color: #b3aa98; background: rgba(217, 210, 195, .04); box-shadow: none; }
+.lb-answer:active { transform: scale(.88); }
+.lb-answer:focus-visible { outline: 1px solid #8e1b17; outline-offset: 3px; }
+.lb-answer-note { animation: ink-in .45s ease-out both; }
+
+/* 往下看：亮起来，滴得更快 */
+.lb-cue:hover .lb-cue-line { background: linear-gradient(to bottom, rgba(217, 210, 195, .5), transparent); }
+.lb-cue:hover .lb-cue-line::after { animation-duration: 1.2s; }
+
+/* 汤单：盯住一碗，另一碗暗下去；按下去有一点陷落 */
+/* 入场动画锁住了 .lb-item 自己的透明度，所以压暗它的子元素 */
+.lb-item { transition: transform .4s ease; }
+.lb-item > * { transition: opacity .8s ease; }
+.lb-menu:has(.lb-item:hover) .lb-item:not(:hover) > * { opacity: .3; }
+.lb-item:active { transform: scale(.992); }
+.lb-arrow { display: inline-block; transition: transform .6s cubic-bezier(.2, .7, .2, 1); }
+.lb-item:hover .lb-arrow { transform: translateX(8px); }
+
+/* 还在熬：凑近了，火苗跳一下 */
+.lb-brewing { cursor: default; transition: color .6s; }
+.lb-brewing:hover { color: rgba(217, 210, 195, .75); }
+.lb-flame { display: inline-block; width: 6px; height: 10px; margin-left: 8px; border-radius: 50% 50% 45% 45% / 65% 65% 35% 35%; background: radial-gradient(ellipse at 50% 80%, #ffd28a, #c0392b 70%); opacity: 0; transform-origin: 50% 100%; transition: opacity .5s; vertical-align: 2px; }
+.lb-brewing:hover .lb-flame { opacity: .9; animation: lb-flame .5s ease-in-out infinite alternate; }
+@keyframes lb-flame { from { transform: scale(1, 1) rotate(-4deg) } to { transform: scale(.85, 1.2) rotate(5deg) } }
+
+/* 页脚链接：一道细线从左划出来 */
+.lb-link { position: relative; transition: color .4s; }
+.lb-link::after { content: ''; position: absolute; left: 0; right: 0; bottom: -4px; height: 1px; background: #8e1b17; transform: scaleX(0); transform-origin: left; transition: transform .5s cubic-bezier(.2, .7, .2, 1); }
+.lb-link:hover { color: rgba(217, 210, 195, .85); }
+.lb-link:hover::after { transform: scaleX(1); }
