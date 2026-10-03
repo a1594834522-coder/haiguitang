@@ -11,7 +11,8 @@
     "start": "NODE_ENV=production tsx server/index.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "gen": "tsx scripts/gen-scene.ts",
-    "check:stories": "tsx scripts/check-stories.ts"
+    "check:stories": "tsx scripts/check-stories.ts",
+    "gen:og": "tsx scripts/gen-og.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.3",

@@ -21,6 +21,12 @@ body {
 }
 ::selection { background: #5a0f0c; color: #f3e9d6; }
 
+/* 服务端写进 #root 的静态正文（给搜索引擎看），React 挂载后就被替换掉 */
+.seo-fallback { max-width: 36rem; margin: 0 auto; padding: 18vh 1.5rem; color: var(--color-ash); font-size: 14px; line-height: 2; }
+.seo-fallback h1 { color: var(--color-bone); font-size: 1.6rem; letter-spacing: .3em; }
+.seo-fallback h2 { margin-top: 1.5rem; color: var(--color-bone); }
+.seo-fallback a { color: var(--color-bone); }
+
 /* ---------- 胶片颗粒 ---------- */
 .grain {
   position: fixed; inset: -100%; pointer-events: none; z-index: 60; opacity: .16; mix-blend-mode: overlay;

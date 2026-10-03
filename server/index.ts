@@ -11,6 +11,7 @@ import { askHost, judgeGuess } from './host.ts'
 import { llmGate } from './llm.ts'
 import { RateLimiter } from './rateLimit.ts'
 import { QueueFullError, QueueTimeoutError } from './semaphore.ts'
+import { pageFor, renderPage, robotsTxt, siteUrl, sitemapXml } from './seo.ts'
 import { sessions, type Session } from './sessions.ts'
 import { catalogView, piecesFromMilestones, publicView, stories, type Story } from './stories.ts'
 
@@ -219,6 +220,9 @@ app.onError((err, c) => {
   return c.json({ error: '出了点问题，请再试一次。' }, 500)
 })
 
+app.get('/robots.txt', c => c.text(robotsTxt(siteUrl(c))))
+app.get('/sitemap.xml', c => c.body(sitemapXml(siteUrl(c)), 200, { 'Content-Type': 'application/xml; charset=utf-8' }))
+
 // 生产环境由同一进程托管前端构建产物
 if (config.isProd && existsSync('dist/index.html')) {
   const indexHtml = readFileSync('dist/index.html', 'utf8')
@@ -228,8 +232,14 @@ if (config.isProd && existsSync('dist/index.html')) {
     await next()
     if (c.res.headers.get('content-type')?.startsWith('text/html')) c.header('Cache-Control', 'no-cache')
   })
+  const page = (c: Context) => {
+    const p = pageFor(c.req.path)
+    return c.html(renderPage(indexHtml, p, siteUrl(c)), p.status)
+  }
+  app.get('/', page)
+  app.get('/soup/*', page)
   app.use('/*', serveStatic({ root: './dist' }))
-  app.get('*', c => c.html(indexHtml))
+  app.get('*', page)
 }
 
 const server = serve({ fetch: app.fetch, port: config.port, hostname: config.host }, info => {

@@ -121,6 +121,7 @@ npm run dev                # 打开 http://localhost:5173
 - 在 `web/src/scenes/<id>/` 实现一个 `SceneDef`，然后在 `web/src/scenes/index.ts` 注册。可以配场景组件、时钟、汤面变字、汤底朗读节奏、目录封面等，字段说明见 [`web/src/scenes/types.ts`](web/src/scenes/types.ts)。两碗现有的汤都可以参考。
 - 写实的场景图可以用 `npm run gen -- web/src/scenes/<id>` 生成。脚本读同目录的 `art.json`，先生成底图，后续状态在底图上局部重绘，再只把改动的区域贴回去，所以各状态的图逐像素对齐。需要一个 OpenAI 兼容的图像接口，在 `.env` 里配置 `IMAGE_API_BASE` 和 `IMAGE_API_KEY`。用法见 [`scripts/gen-scene.ts`](scripts/gen-scene.ts) 开头的说明。
 - 图片导出成 webp，单张尽量在 300KB 以内。
+- 分享卡片（链接贴到论坛、聊天软件时展开的预览图）用 `npm run gen:og` 生成，会读取 `web/src/scenes/<id>/cover.jpg` 作背景，需要在 macOS 上运行。没有专属卡片的汤会用首页那张。
 - 布景只能表现玩家**已经达成**的里程碑，不能提前暗示。
 - 布景工作量比较大，可以先只投剧本，布景另开一个 PR。
 
