@@ -3,7 +3,8 @@
  * 静态正文放在 #root 里，React 挂载时会整个替换掉；不跑 JS 的爬虫也能读到汤名、简介和汤面。
  * 只用公开信息（汤面、简介），绝不涉及汤底。
  */
-import { existsSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, readFileSync } from 'node:fs'
 import type { Context } from 'hono'
 import { stories, type Story } from './stories.ts'
 
@@ -21,6 +22,19 @@ export function siteUrl(c: Context) {
 }
 
 type Page = { title: string; description: string; path: string; body: string; status: 200 | 404; image: string }
+
+/**
+ * public/ 里的文件名不带哈希，Cloudflare 会按扩展名缓存几个小时，换了图标、卡片也不生效。
+ * 引用时带上按内容算的版本号，文件一变地址就变。
+ */
+const versions = new Map<string, string>()
+function versioned(path: string) {
+  if (!versions.has(path)) {
+    const file = `dist${path}`
+    versions.set(path, existsSync(file) ? `${path}?v=${createHash('md5').update(readFileSync(file)).digest('hex').slice(0, 8)}` : path)
+  }
+  return versions.get(path)!
+}
 
 /** 分享卡片（npm run gen:og 生成）；这碗汤没有专属卡片就用首页那张 */
 const ogImage = (id?: string) => (id && existsSync(`dist/og/${id}.jpg`) ? `/og/${id}.jpg` : '/og/home.jpg')
@@ -75,7 +89,7 @@ export function renderPage(indexHtml: string, page: Page, origin: string) {
     `<meta property="og:description" content="${esc(page.description)}" />`,
     `<meta property="og:url" content="${esc(url)}" />`,
     `<meta property="og:locale" content="zh_CN" />`,
-    `<meta property="og:image" content="${esc(origin + page.image)}" />`,
+    `<meta property="og:image" content="${esc(origin + versioned(page.image))}" />`,
     `<meta property="og:image:width" content="1200" />`,
     `<meta property="og:image:height" content="630" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
@@ -85,6 +99,7 @@ export function renderPage(indexHtml: string, page: Page, origin: string) {
     .filter(Boolean)
     .join('\n    ')
   return indexHtml
+    .replace(/href="(\/(?:favicon\.(?:ico|svg)|apple-touch-icon\.png))"/g, (_, p: string) => `href="${versioned(p)}"`)
     .replace(/<title>[^<]*<\/title>/, head)
     .replace('<div id="root"></div>', `<div id="root"><main class="seo-fallback">${page.body}</main></div>`)
 }
