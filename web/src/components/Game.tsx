@@ -202,11 +202,12 @@ export function Game({ storyId }: { storyId: string }) {
 
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-4 sm:p-6">
           <div className="pointer-events-auto">
-            <button onClick={() => navigate('/')} className={`text-[11px] tracking-[.3em] transition ${light ? '-ml-2 rounded-sm bg-[#f4ecd8]/80 px-2 py-0.5 text-[#2a1a0e]/85 shadow-[0_1px_6px_rgba(0,0,0,.15)] hover:bg-[#f4ecd8] hover:text-[#1d130b]' : 'text-ash/60 hover:text-bone'}`}>
+            <button onClick={() => navigate('/')} className={`text-[11px] tracking-[.3em] transition ${light ? '-ml-2 rounded-sm bg-[#f4ecd8]/60 px-2 py-0.5 text-[#2a1a0e]/75 shadow-[0_1px_6px_rgba(0,0,0,.12)] hover:bg-[#f4ecd8]/90 hover:text-[#1d130b]' : 'text-ash/60 hover:text-bone'}`}>
               ← 汤馆
             </button>
             <h1 className={`mt-1 font-hand text-3xl sm:text-4xl ${light ? 'text-[#2a1a0e] drop-shadow-[0_1px_6px_rgba(255,250,235,.8)]' : 'text-bone/90 drop-shadow-[0_2px_8px_#000]'}`}>{story.title}</h1>
-            <p className={`mt-1 hidden text-[11px] tracking-wider sm:block ${light ? '-ml-2 w-fit rounded-sm bg-[#f4ecd8]/70 px-2 py-0.5 text-[#2a1a0e]/80' : 'text-ash/60'}`}>{story.tags.join(' · ')}</p>
+            {/* 亮色场景上标签会压在画面里，不显示 */}
+            {!light && <p className="mt-1 hidden text-[11px] tracking-wider text-ash/60 sm:block">{story.tags.join(' · ')}</p>}
             {mock && <p className="mt-2 inline-block border border-amber-700/50 px-1.5 text-[10px] text-amber-600/80">模拟主持人</p>}
           </div>
           <div className="pointer-events-auto flex flex-col items-end gap-2">

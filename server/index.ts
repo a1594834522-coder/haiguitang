@@ -222,6 +222,12 @@ app.onError((err, c) => {
 // 生产环境由同一进程托管前端构建产物
 if (config.isProd && existsSync('dist/index.html')) {
   const indexHtml = readFileSync('dist/index.html', 'utf8')
+  // 页面本身每次都要回源确认：不写的话浏览器会按 Last-Modified 自己猜一个缓存时长，发版后刷新还是旧代码。
+  // 带哈希的 /assets/ 由反代设成 immutable，不受影响。
+  app.use('/*', async (c, next) => {
+    await next()
+    if (c.res.headers.get('content-type')?.startsWith('text/html')) c.header('Cache-Control', 'no-cache')
+  })
   app.use('/*', serveStatic({ root: './dist' }))
   app.get('*', c => c.html(indexHtml))
 }
